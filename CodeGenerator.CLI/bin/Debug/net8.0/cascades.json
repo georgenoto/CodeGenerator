@@ -1,0 +1,7 @@
+[
+    {
+        "Entity": "MapeoParametro",
+        "ChildProperty": "IdParametro",
+        "ParentProperty": "IdTipoParametro"
+    }
+]
