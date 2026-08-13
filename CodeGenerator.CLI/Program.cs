@@ -10,7 +10,7 @@ Console.WriteLine(@"
 
 var options = new GeneratorOptions();
 options.ProjectName = "GNOTO.IntegradorContable";
-options.ConnectionString = "Data Source=BBDDPBA02\\INTEGRACION; Initial Catalog=dbContabilidad; User ID=userDesarrollo; Password=desarrollo;TrustServerCertificate=True;";
+options.ConnectionString = "Data Source=BBDDPBA02\\INTEGRACION; Initial Catalog=dbFutbolData; User ID=userDesarrollo; Password=desarrollo;TrustServerCertificate=True;";
 options.OutputPath = "C:\\D\\Proyecto Generador\\";
 options.CascadeConfigPath = "cascades.json";
 // Interactivo o por argumentos

@@ -60,7 +60,7 @@ public class EntityGenerator
                         var refSchemaNs = SchemaHelper.ToNamespace(col.FkReferencedSchema ?? "dbo");
                         sb.AppendLine();
                         sb.AppendLine($"    [ForeignKey(\"{col.ColumnName}\")]");                       
-                        sb.AppendLine($"    public {refSchemaNs}.{col.FkReferencedTable}? {col.FkReferencedTable} {{ get; set; }}");
+                        sb.AppendLine($"    public {refSchemaNs}.{col.FkReferencedTable}? {col.FkReferencedTable}{col.ColumnName.Remove(0,2)} {{ get; set; }}");
                     }
 
                     entityInfo.Properties.Add(ep);
