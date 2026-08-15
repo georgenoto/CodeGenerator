@@ -55,12 +55,18 @@ public class EntityGenerator
                         ep.FkReferencedTable = col.FkReferencedTable;
                         ep.FkReferencedColumn = col.FkReferencedColumn;
                         ep.FkReferencedDisplayColumn = col.FkReferencedDisplayColumn;
-                        ep.FkDisplayPropertyName = $"{col.FkReferencedTable}{col.FkReferencedDisplayColumn}";
+                        // Solo generar propiedad display si existe una columna de texto real
+                        // (no cuando FindDisplayColumn cae al fallback del key, ej. "Id").
+                        if (!string.IsNullOrEmpty(col.FkReferencedDisplayColumn) &&
+                            !col.FkReferencedDisplayColumn.Equals(col.FkReferencedColumn, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ep.FkDisplayPropertyName = $"{col.FkReferencedTable}{col.FkReferencedDisplayColumn}";
+                        }
 
                         var refSchemaNs = SchemaHelper.ToNamespace(col.FkReferencedSchema ?? "dbo");
                         sb.AppendLine();
                         sb.AppendLine($"    [ForeignKey(\"{col.ColumnName}\")]");                       
-                        sb.AppendLine($"    public {refSchemaNs}.{col.FkReferencedTable}? {col.FkReferencedTable}{col.ColumnName.Remove(0,2)} {{ get; set; }}");
+                        sb.AppendLine($"    public {refSchemaNs}.{col.FkReferencedTable}? {col.FkReferencedTable} {{ get; set; }}");
                     }
 
                     entityInfo.Properties.Add(ep);

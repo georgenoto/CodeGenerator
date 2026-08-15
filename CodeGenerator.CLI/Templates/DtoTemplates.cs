@@ -13,12 +13,14 @@ public static class DtoTemplates
         sb.AppendLine($"public class {entity.Name}Dto");
         sb.AppendLine("{");
 
+        var usedNames = new HashSet<string>();
         foreach (var prop in entity.Properties.Where(p => !p.IsNavigation))
         {
+            usedNames.Add(prop.Name);
             sb.AppendLine($"    public {prop.Type} {prop.Name} {{ get; set; }}");
-            if (prop.IsForeignKey && !string.IsNullOrEmpty(prop.FkDisplayPropertyName))
+            if (prop.IsForeignKey && !string.IsNullOrEmpty(prop.FkDisplayPropertyName) && usedNames.Add(prop.FkDisplayPropertyName))
             {
-                sb.AppendLine($"    public string? {prop.FkDisplayPropertyName}{prop.Name.Remove(0, 2)} {{ get; set; }}");
+                sb.AppendLine($"    public string? {prop.FkDisplayPropertyName} {{ get; set; }}");
             }
         }
 
@@ -80,10 +82,10 @@ public static class DtoTemplates
         foreach (var prop in entity.Properties.Where(p => !p.IsNavigation))
         {
             sb.AppendLine($"            {prop.Name} = entity.{prop.Name},");
-            //if (prop.IsForeignKey && !string.IsNullOrEmpty(prop.FkDisplayPropertyName))
-            //{
-            //    sb.AppendLine($"            {prop.FkDisplayPropertyName} = entity.{prop.FkReferencedTable}?.{prop.FkReferencedDisplayColumn},");
-            //}
+            if (prop.IsForeignKey && !string.IsNullOrEmpty(prop.FkDisplayPropertyName))
+            {
+                sb.AppendLine($"            {prop.FkDisplayPropertyName} = entity.{prop.FkReferencedTable}?.{prop.FkReferencedDisplayColumn},");
+            }
         }
         sb.AppendLine("        };");
         sb.AppendLine("    }");
