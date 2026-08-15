@@ -222,7 +222,7 @@ CREATE TABLE [Base].[Equipos] (
 	Pais VARCHAR(50) NOT NULL,
 );
 
-CREATE TABLE LigaEquipos(
+CREATE TABLE [Base].LigaEquipos(
     Id INT IDENTITY PRIMARY KEY,
     IdLiga INT,
     IdEquipo INT,
@@ -279,5 +279,116 @@ CREATE TABLE [Metrica].[EventosDetalle] (
     CONSTRAINT FK_Eventos_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),
 	CONSTRAINT FK_Clasificador FOREIGN KEY (IdcTipoEvento) REFERENCES [Base].[Clasificadores](Id)
 );
+
+go
+--- DATOS BASES
+INSERT INTO [Seguridad].[Usuarios] VALUES ('gnoto','georgenoto@gmail.com','gnoto1986*','George Noto Issa',1,GETDATE(),GETDATE(),GETDATE())
+INSERT INTO [Seguridad].[Usuarios] VALUES ('tenoto','tenoto@gmail.com','gnoto1986*','Thiago Emiliano Noto Vasquez',1,GETDATE(),GETDATE(),GETDATE())
+GO
+INSERT INTO [Seguridad].[Roles] VALUES ('Admin','Administrador total del sistema',1,GETDATE())
+INSERT INTO [Seguridad].[Roles] VALUES ('Seguridad','Administrador de app ',1,GETDATE())
+INSERT INTO [Seguridad].[Roles] VALUES ('UserFutbol','Usuario para ingresar datos futbol ',1,GETDATE())
+GO
+
+INSERT INTO [Seguridad].[UsuarioRol] VALUES (1,1,GETDATE())
+INSERT INTO [Seguridad].[UsuarioRol] VALUES (2,2,GETDATE())
+
+GO
+
+INSERT INTO [Seguridad].[Modulos] VALUES ('Seguridad','SEGURIDAD','','/Seguridad','',1,1,1)
+INSERT INTO [Seguridad].[Modulos] VALUES ('Base','BASE','','/Base','',1,1,1)
+INSERT INTO [Seguridad].[Modulos] VALUES ('Metrica','METRICA','','/Metrica','',1,1,1)
+GO
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Usuarios','USUARIOS','','/Usuarios','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Roles','ROLES','','/Roles','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'UsuarioRol','USUARIOSROL','','/UsuarioRol','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Modulos','MODULOS','','/Modulos','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Permisos','PERMISOS','','/Permisos','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'RolPermiso','ROLPERMISO','','/RolPermiso','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Opciones','OPCIONES','','/Opciones','bi bi-table',1,1,1)
+
+GO
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Usuarios/Index','','USUARIOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Usuarios/Create','','USUARIOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Usuarios/Edit','','USUARIOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Usuarios/Delete','','USUARIOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Usuarios/Details','','USUARIOS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Roles/Index','','ROLES_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Roles/Create','','ROLES_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Roles/Edit','','ROLES_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Roles/Delete','','ROLES_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Roles/Details','','ROLES_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/UsuarioRol/Index','','USUARIOROL_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/UsuarioRol/Create','','USUARIOROL_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/UsuarioRol/Edit','','USUARIOROL_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/UsuarioRol/Delete','','USUARIOROL_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/UsuarioRol/Details','','USUARIOROL_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Modulos/Index','','MODULOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Modulos/Create','','MODULOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Modulos/Edit','','MODULOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Modulos/Delete','','MODULOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Modulos/Details','','MODULOS_DETALLE',1)
+
+
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Permisos/Index','','PERMISOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Permisos/Create','','PERMISOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Permisos/Edit','','PERMISOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Permisos/Delete','','PERMISOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Permisos/Details','','PERMISOS_DETALLE',1)
+
+
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/RolPermiso/Index','','ROLPERMISO_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/RolPermiso/Create','','ROLPERMISO_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/RolPermiso/Edit','','ROLPERMISO_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/RolPermiso/Delete','','ROLPERMISO_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/RolPermiso/Details','','ROLPERMISO_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Opciones/Index','','OPCIONES_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Opciones/Create','','OPCIONES_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Opciones/Edit','','OPCIONES_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Opciones/Delete','','OPCIONES_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Opciones/Details','','OPCIONES_DETALLE',1)
+
+GO
+
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,1,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,2,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,3,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,4,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,5,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,6,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,7,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,8,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,9,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,10,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,11,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,12,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,13,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,14,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,15,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,16,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,17,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,18,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,19,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,20,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,21,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,22,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,23,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,24,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,25,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,26,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,27,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,28,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,29,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,30,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,31,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,32,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,33,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,34,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,35,GETDATE())
+
 
 
