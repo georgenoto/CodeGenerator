@@ -84,7 +84,7 @@ public static class DtoTemplates
             sb.AppendLine($"            {prop.Name} = entity.{prop.Name},");
             if (prop.IsForeignKey && !string.IsNullOrEmpty(prop.FkDisplayPropertyName))
             {
-                sb.AppendLine($"            {prop.FkDisplayPropertyName} = entity.{prop.FkReferencedTable}?.{prop.FkReferencedDisplayColumn},");
+                sb.AppendLine($"            {prop.FkDisplayPropertyName} = entity.{prop.FkNavigationName}?.{prop.FkReferencedDisplayColumn},");
             }
         }
         sb.AppendLine("        };");

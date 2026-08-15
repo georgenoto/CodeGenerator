@@ -15,6 +15,7 @@ public class EntityProperty
     public string? FkReferencedTable { get; set; }
     public string? FkReferencedColumn { get; set; }
     public string? FkReferencedDisplayColumn { get; set; }
+    public string? FkNavigationName { get; set; }
     public string? FkDisplayPropertyName { get; set; }
     public string? CascadeParentProperty { get; set; }
     public string? CascadeFilterProperty { get; set; }

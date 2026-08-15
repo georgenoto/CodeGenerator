@@ -35,6 +35,13 @@ public class EntityGenerator
                 sb.AppendLine($"public partial class {table.EntityClassName}");
                 sb.AppendLine("{");
 
+                // Número de FK que apuntan a cada tabla referenciada, para desambiguar
+                // nombres de navegación cuando una misma tabla es referenciada 2+ veces.
+                var fkColumnCounts = table.Columns
+                    .Where(c => c.IsForeignKey && !string.IsNullOrEmpty(c.FkReferencedTable))
+                    .GroupBy(c => c.FkReferencedTable!)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
                 foreach (var col in table.Columns)
                 {
                     sb.AppendLine($"    public {col.CsDataType} {col.ColumnName} {{ get; set; }}");
@@ -55,18 +62,33 @@ public class EntityGenerator
                         ep.FkReferencedTable = col.FkReferencedTable;
                         ep.FkReferencedColumn = col.FkReferencedColumn;
                         ep.FkReferencedDisplayColumn = col.FkReferencedDisplayColumn;
+
+                        // Nombre de navegación único: si hay varias FK a la misma tabla,
+                        // se agrega el sufijo de la columna (ej. IdLocal -> EquiposLocal).
+                        var navName = col.FkReferencedTable;
+                        if (col.FkReferencedTable != null &&
+                            fkColumnCounts.TryGetValue(col.FkReferencedTable, out var fkCount) &&
+                            fkCount > 1)
+                        {
+                            var suffix = col.ColumnName;
+                            if (suffix.StartsWith("Id", StringComparison.OrdinalIgnoreCase) && suffix.Length > 2)
+                                suffix = suffix.Substring(2);
+                            navName = $"{col.FkReferencedTable}{suffix}";
+                        }
+                        ep.FkNavigationName = navName;
+
                         // Solo generar propiedad display si existe una columna de texto real
                         // (no cuando FindDisplayColumn cae al fallback del key, ej. "Id").
                         if (!string.IsNullOrEmpty(col.FkReferencedDisplayColumn) &&
                             !col.FkReferencedDisplayColumn.Equals(col.FkReferencedColumn, StringComparison.OrdinalIgnoreCase))
                         {
-                            ep.FkDisplayPropertyName = $"{col.FkReferencedTable}{col.FkReferencedDisplayColumn}";
+                            ep.FkDisplayPropertyName = $"{navName}{col.FkReferencedDisplayColumn}";
                         }
 
                         var refSchemaNs = SchemaHelper.ToNamespace(col.FkReferencedSchema ?? "dbo");
                         sb.AppendLine();
                         sb.AppendLine($"    [ForeignKey(\"{col.ColumnName}\")]");                       
-                        sb.AppendLine($"    public {refSchemaNs}.{col.FkReferencedTable}? {col.FkReferencedTable} {{ get; set; }}");
+                        sb.AppendLine($"    public {refSchemaNs}.{col.FkReferencedTable}? {navName} {{ get; set; }}");
                     }
 
                     entityInfo.Properties.Add(ep);

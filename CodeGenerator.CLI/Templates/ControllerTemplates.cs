@@ -13,9 +13,19 @@ public static class ControllerTemplates
         var fkProps = entity.Properties.Where(p => p.IsForeignKey).ToList();
         var viewBase = $"~/Views/{entity.SchemaNamespace}/{entity.Name}";
 
+        // Tablas referenciadas (distintas): una sola inyección de servicio por tabla,
+        // aunque existan varias FK hacia la misma tabla (ej. IdLocal/IdVisitante -> Equipos).
+        var fkTables = fkProps
+            .Select(f => f.FkReferencedTable)
+            .Where(t => !string.IsNullOrEmpty(t))
+            .Distinct()
+            .ToList();
+
         // Unique referenced schemas for using directives
+        // (excluye el schema de la propia entidad, ya cubierto por el using de Services)
         var refSchemas = fkProps
             .Select(f => SchemaHelper.ToNamespace(f.FkReferencedSchema ?? "dbo"))
+            .Where(s => s != SchemaHelper.ToNamespace(entity.SchemaName))
             .Distinct().ToList();
 
         var sb = new StringBuilder();
@@ -28,10 +38,11 @@ public static class ControllerTemplates
         {
             sb.AppendLine($"using {serviciosNamespace}.{refSchema}.Services;");
         }
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
+            var fk = fkProps.First(f => f.FkReferencedTable == fkTable);
             var refSchema = SchemaHelper.ToNamespace(fk.FkReferencedSchema ?? "dbo");
-            sb.AppendLine($"using {serviciosNamespace}.{refSchema}.DTOs.{fk.FkReferencedTable};");
+            sb.AppendLine($"using {serviciosNamespace}.{refSchema}.DTOs.{fkTable};");
         }
         sb.AppendLine();
         sb.AppendLine($"namespace {webNamespace}.{entity.SchemaNamespace}.Controllers;");
@@ -39,22 +50,22 @@ public static class ControllerTemplates
         sb.AppendLine($"public class {controllerName} : Controller");
         sb.AppendLine("{");
         sb.AppendLine($"    private readonly I{entity.Name}Service _service;");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"    private readonly I{fk.FkReferencedTable}Service _{fk.FkReferencedTable}Service;");
+            sb.AppendLine($"    private readonly I{fkTable}Service _{fkTable}Service;");
         }
         sb.AppendLine();
         sb.AppendLine($"    public {controllerName}(I{entity.Name}Service service");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        , I{fk.FkReferencedTable}Service {fk.FkReferencedTable}Service");
+            sb.AppendLine($"        , I{fkTable}Service {fkTable}Service");
         }
         sb.AppendLine("    )");
         sb.AppendLine("    {");
         sb.AppendLine("        _service = service;");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        _{fk.FkReferencedTable}Service = {fk.FkReferencedTable}Service;");
+            sb.AppendLine($"        _{fkTable}Service = {fkTable}Service;");
         }
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -76,9 +87,9 @@ public static class ControllerTemplates
         sb.AppendLine($"    // GET: {entity.Name}/Create");
         sb.AppendLine("    public async Task<IActionResult> Create()");
         sb.AppendLine("    {");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fk.FkReferencedTable}DropdownAsync();");
+            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
         }
         sb.AppendLine($"        return View(\"{viewBase}/Create.cshtml\", new Create{entity.Name}Dto());");
         sb.AppendLine("    }");
@@ -93,9 +104,9 @@ public static class ControllerTemplates
         sb.AppendLine("            await _service.CreateAsync(createDto);");
         sb.AppendLine("            return RedirectToAction(nameof(Index));");
         sb.AppendLine("        }");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fk.FkReferencedTable}DropdownAsync();");
+            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
         }
         sb.AppendLine($"        return View(\"{viewBase}/Create.cshtml\", createDto);");
         sb.AppendLine("    }");
@@ -113,9 +124,9 @@ public static class ControllerTemplates
             sb.AppendLine($"            {prop.Name} = result.{prop.Name},");
         }
         sb.AppendLine("        };");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fk.FkReferencedTable}DropdownAsync();");
+            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
         }
         sb.AppendLine($"        return View(\"{viewBase}/Edit.cshtml\", updateDto);");
         sb.AppendLine("    }");
@@ -131,9 +142,9 @@ public static class ControllerTemplates
         sb.AppendLine("            if (!success) return NotFound();");
         sb.AppendLine("            return RedirectToAction(nameof(Index));");
         sb.AppendLine("        }");
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fk.FkReferencedTable}DropdownAsync();");
+            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
         }
         sb.AppendLine($"        return View(\"{viewBase}/Edit.cshtml\", updateDto);");
         sb.AppendLine("    }");
@@ -168,13 +179,16 @@ public static class ControllerTemplates
             sb.AppendLine("    }");
             sb.AppendLine();
         }
-        foreach (var fk in fkProps)
+        foreach (var fkTable in fkTables)
         {
-            var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
-            sb.AppendLine($"    private async Task Populate{fk.FkReferencedTable}DropdownAsync()");
+            sb.AppendLine($"    private async Task Populate{fkTable}DropdownAsync()");
             sb.AppendLine("    {");
-            sb.AppendLine($"        var items = await _{fk.FkReferencedTable}Service.GetAllAsync();");
-            sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof({fk.FkReferencedTable}Dto.{fk.FkReferencedColumn}), \"{displayCol}\");");
+            sb.AppendLine($"        var items = await _{fkTable}Service.GetAllAsync();");
+            foreach (var fk in fkProps.Where(f => f.FkReferencedTable == fkTable))
+            {
+                var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
+                sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof({fkTable}Dto.{fk.FkReferencedColumn}), \"{displayCol}\");");
+            }
             sb.AppendLine("    }");
             sb.AppendLine();
         }

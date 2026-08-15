@@ -14,7 +14,7 @@ public static class ViewTemplates
         {
             if (p.IsForeignKey)
             {
-                headers.Add(p.FkReferencedTable ?? p.Name);
+                headers.Add(p.FkNavigationName ?? p.FkReferencedTable ?? p.Name);
                 props.Add(p.FkDisplayPropertyName ?? p.Name);
             }
             else
@@ -67,7 +67,7 @@ public static class ViewTemplates
         sb.AppendLine("        <dl class=\"row\">");
         foreach (var prop in allProps)
         {
-            var displayName = prop.IsForeignKey ? (prop.FkReferencedTable ?? prop.Name) : prop.Name;
+            var displayName = prop.IsForeignKey ? (prop.FkNavigationName ?? prop.FkReferencedTable ?? prop.Name) : prop.Name;
             var displayProp = prop.IsForeignKey && prop.FkDisplayPropertyName != null ? prop.FkDisplayPropertyName : prop.Name;
             sb.AppendLine($"            <dt class=\"col-sm-3\">{displayName}</dt>");
             sb.AppendLine($"            <dd class=\"col-sm-9\">@Model.{displayProp}</dd>");
