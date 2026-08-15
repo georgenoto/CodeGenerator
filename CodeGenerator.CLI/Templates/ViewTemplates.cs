@@ -252,7 +252,7 @@ public static class ViewTemplates
         return sb.ToString();
     }
 
-    public static string GetLayoutView(string webNamespace, List<EntityInfo> entities)
+    public static string GetLayoutView(string webNamespace, List<EntityInfo> entities, CodeGenerator.CLI.Models.SecuritySchemaInfo? security = null)
     {
         var entitiesBySchema = entities.GroupBy(e => e.SchemaName).OrderBy(g => g.Key);
         var sb = new StringBuilder();
@@ -274,7 +274,7 @@ public static class ViewTemplates
         sb.AppendLine("                <i class=\"bi bi-building\"></i> " + webNamespace);
         sb.AppendLine("            </a>");
         sb.AppendLine("            <hr class=\"text-secondary\" />");
-        sb.AppendLine("            <ul class=\"nav nav-pills flex-column mb-auto\" id=\"sidebarMenu\">");
+        sb.AppendLine("            <ul class=\"nav nav-pills flex-column mb-auto\">");
         sb.AppendLine("                <li class=\"nav-item\">");
         sb.AppendLine("                    <a class=\"nav-link text-white\" asp-controller=\"Home\" asp-action=\"Index\">");
         sb.AppendLine("                        <i class=\"bi bi-house\"></i> Inicio");
@@ -282,35 +282,42 @@ public static class ViewTemplates
         sb.AppendLine("                </li>");
         sb.AppendLine("            </ul>");
         sb.AppendLine("            <hr class=\"text-secondary\" />");
-        var groupIndex = 0;
-        foreach (var schemaGroup in entitiesBySchema)
+        if (security is { IsEnabled: true })
         {
-            var schemaNs = SchemaHelper.ToNamespace(schemaGroup.Key);
-            var displayName = schemaNs == "Dbo" ? "General" : schemaNs;
-            var collapseId = $"collapse{schemaNs}";
-            sb.AppendLine($"            <ul class=\"nav nav-pills flex-column mb-auto\">");
-            sb.AppendLine("                <li class=\"nav-item\">");
-            sb.AppendLine($"                    <a class=\"nav-link text-secondary small text-uppercase fw-bold px-2 d-flex justify-content-between align-items-center\"");
-            sb.AppendLine($"                       data-bs-toggle=\"collapse\" href=\"#{collapseId}\" role=\"button\" aria-expanded=\"{(groupIndex == 0 ? "true" : "false")}\">");
-            sb.AppendLine($"                        <span>{displayName}</span>");
-            sb.AppendLine("                        <i class=\"bi bi-chevron-down\"></i>");
-            sb.AppendLine("                    </a>");
-            var firstItem = groupIndex == 0 ? " show" : "";
-            sb.AppendLine($"                    <div class=\"collapse{firstItem}\" id=\"{collapseId}\">");
-            sb.AppendLine("                        <ul class=\"nav nav-pills flex-column ms-2\">");
-            foreach (var entity in schemaGroup.OrderBy(e => e.Name))
+            sb.AppendLine("            @await Component.InvokeAsync(\"Menu\")");
+        }
+        else
+        {
+            var groupIndex = 0;
+            foreach (var schemaGroup in entitiesBySchema)
             {
-                sb.AppendLine("                            <li class=\"nav-item\">");
-                sb.AppendLine($"                                <a class=\"nav-link text-white\" asp-controller=\"{entity.Name}\" asp-action=\"Index\">");
-                sb.AppendLine($"                                    <i class=\"bi bi-table\"></i> {entity.Name}");
-                sb.AppendLine("                                </a>");
-                sb.AppendLine("                            </li>");
+                var schemaNs = SchemaHelper.ToNamespace(schemaGroup.Key);
+                var displayName = schemaNs == "Dbo" ? "General" : schemaNs;
+                var collapseId = $"collapse{schemaNs}";
+                sb.AppendLine($"            <ul class=\"nav nav-pills flex-column mb-auto\">");
+                sb.AppendLine("                <li class=\"nav-item\">");
+                sb.AppendLine($"                    <a class=\"nav-link text-secondary small text-uppercase fw-bold px-2 d-flex justify-content-between align-items-center\"");
+                sb.AppendLine($"                       data-bs-toggle=\"collapse\" href=\"#{collapseId}\" role=\"button\" aria-expanded=\"{(groupIndex == 0 ? "true" : "false")}\">");
+                sb.AppendLine($"                        <span>{displayName}</span>");
+                sb.AppendLine("                        <i class=\"bi bi-chevron-down\"></i>");
+                sb.AppendLine("                    </a>");
+                var firstItem = groupIndex == 0 ? " show" : "";
+                sb.AppendLine($"                    <div class=\"collapse{firstItem}\" id=\"{collapseId}\">");
+                sb.AppendLine("                        <ul class=\"nav nav-pills flex-column ms-2\">");
+                foreach (var entity in schemaGroup.OrderBy(e => e.Name))
+                {
+                    sb.AppendLine("                            <li class=\"nav-item\">");
+                    sb.AppendLine($"                                <a class=\"nav-link text-white\" asp-controller=\"{entity.Name}\" asp-action=\"Index\">");
+                    sb.AppendLine($"                                    <i class=\"bi bi-table\"></i> {entity.Name}");
+                    sb.AppendLine("                                </a>");
+                    sb.AppendLine("                            </li>");
+                }
+                sb.AppendLine("                        </ul>");
+                sb.AppendLine("                    </div>");
+                sb.AppendLine("                </li>");
+                sb.AppendLine("            </ul>");
+                groupIndex++;
             }
-            sb.AppendLine("                        </ul>");
-            sb.AppendLine("                    </div>");
-            sb.AppendLine("                </li>");
-            sb.AppendLine("            </ul>");
-            groupIndex++;
         }
         sb.AppendLine("            <hr class=\"text-secondary\" />");
         sb.AppendLine("            <ul class=\"nav nav-pills flex-column\">");
@@ -320,6 +327,31 @@ public static class ViewTemplates
         sb.AppendLine("                    </a>");
         sb.AppendLine("                </li>");
         sb.AppendLine("            </ul>");
+        if (security is { IsEnabled: true })
+        {
+            sb.AppendLine("            <hr class=\"text-secondary\" />");
+            sb.AppendLine("            <div class=\"mt-auto\">");
+            sb.AppendLine("                @if (User.Identity != null && User.Identity.IsAuthenticated)");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    <div class=\"text-white small mb-2 px-2\">");
+            sb.AppendLine("                        <i class=\"bi bi-person-circle\"></i> @User.Identity.Name");
+            sb.AppendLine("                    </div>");
+            sb.AppendLine("                    <form asp-controller=\"Account\" asp-action=\"Logout\" method=\"post\" class=\"px-2\">");
+            sb.AppendLine("                        <button type=\"submit\" class=\"btn btn-outline-light btn-sm w-100\">");
+            sb.AppendLine("                            <i class=\"bi bi-box-arrow-right\"></i> Cerrar Sesión");
+            sb.AppendLine("                        </button>");
+            sb.AppendLine("                    </form>");
+            sb.AppendLine("                }");
+            sb.AppendLine("                else");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    <div class=\"px-2\">");
+            sb.AppendLine("                        <a asp-controller=\"Account\" asp-action=\"Login\" class=\"btn btn-outline-light btn-sm w-100\">");
+            sb.AppendLine("                            <i class=\"bi bi-box-arrow-in-right\"></i> Iniciar Sesión");
+            sb.AppendLine("                        </a>");
+            sb.AppendLine("                    </div>");
+            sb.AppendLine("                }");
+            sb.AppendLine("            </div>");
+        }
         sb.AppendLine("        </div>");
         sb.AppendLine();
         sb.AppendLine("        <!-- Contenido principal -->");

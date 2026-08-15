@@ -5,7 +5,8 @@ namespace CodeGenerator.CLI.Templates;
 
 public static class ControllerTemplates
 {
-    public static string GetEntityController(string webNamespace, string serviciosNamespace, EntityInfo entity)
+    public static string GetEntityController(string webNamespace, string serviciosNamespace, EntityInfo entity,
+        IReadOnlyDictionary<string, string>? permisoPorAccion = null)
     {
         var keyType = entity.KeyProperty.Type.Replace("?", "");
         var controllerName = $"{entity.Name}Controller";
@@ -28,9 +29,15 @@ public static class ControllerTemplates
             .Where(s => s != SchemaHelper.ToNamespace(entity.SchemaName))
             .Distinct().ToList();
 
+        var usesPermiso = permisoPorAccion != null && permisoPorAccion.Count > 0;
+
         var sb = new StringBuilder();
         sb.AppendLine("using Microsoft.AspNetCore.Mvc;");
         sb.AppendLine("using Microsoft.AspNetCore.Mvc.Rendering;");
+        if (usesPermiso)
+        {
+            sb.AppendLine($"using {webNamespace}.Seguridad;");
+        }
         sb.AppendLine($"using {serviciosNamespace}.{entity.SchemaNamespace}.DTOs.{entity.Name};");
         sb.AppendLine($"using {serviciosNamespace}.{entity.SchemaNamespace}.Services;");
         sb.AppendLine($"using {serviciosNamespace}.{entity.SchemaNamespace}.Mappings;");
@@ -70,6 +77,10 @@ public static class ControllerTemplates
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    // GET: {entity.Name}");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Index", out var permIndex))
+        {
+            sb.AppendLine($"    [Permiso(\"{permIndex}\")]");
+        }
         sb.AppendLine("    public async Task<IActionResult> Index()");
         sb.AppendLine("    {");
         sb.AppendLine("        var result = await _service.GetAllAsync();");
@@ -77,6 +88,10 @@ public static class ControllerTemplates
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    // GET: {entity.Name}/Details/{{id}}");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Details", out var permDetails))
+        {
+            sb.AppendLine($"    [Permiso(\"{permDetails}\")]");
+        }
         sb.AppendLine($"    public async Task<IActionResult> Details({keyType} id)");
         sb.AppendLine("    {");
         sb.AppendLine("        var result = await _service.GetByIdAsync(id);");
@@ -85,6 +100,10 @@ public static class ControllerTemplates
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    // GET: {entity.Name}/Create");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Create", out var permCreate))
+        {
+            sb.AppendLine($"    [Permiso(\"{permCreate}\")]");
+        }
         sb.AppendLine("    public async Task<IActionResult> Create()");
         sb.AppendLine("    {");
         foreach (var fkTable in fkTables)
@@ -97,6 +116,10 @@ public static class ControllerTemplates
         sb.AppendLine($"    // POST: {entity.Name}/Create");
         sb.AppendLine("    [HttpPost]");
         sb.AppendLine("    [ValidateAntiForgeryToken]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Create", out var permCreatePost))
+        {
+            sb.AppendLine($"    [Permiso(\"{permCreatePost}\")]");
+        }
         sb.AppendLine($"    public async Task<IActionResult> Create(Create{entity.Name}Dto createDto)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (ModelState.IsValid)");
@@ -112,6 +135,10 @@ public static class ControllerTemplates
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    // GET: {entity.Name}/Edit/{{id}}");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Edit", out var permEdit))
+        {
+            sb.AppendLine($"    [Permiso(\"{permEdit}\")]");
+        }
         sb.AppendLine($"    public async Task<IActionResult> Edit({keyType} id)");
         sb.AppendLine("    {");
         sb.AppendLine("        var result = await _service.GetByIdAsync(id);");
@@ -134,6 +161,10 @@ public static class ControllerTemplates
         sb.AppendLine($"    // POST: {entity.Name}/Edit/{{id}}");
         sb.AppendLine("    [HttpPost]");
         sb.AppendLine("    [ValidateAntiForgeryToken]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Edit", out var permEditPost))
+        {
+            sb.AppendLine($"    [Permiso(\"{permEditPost}\")]");
+        }
         sb.AppendLine($"    public async Task<IActionResult> Edit(Update{entity.Name}Dto updateDto)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (ModelState.IsValid)");
@@ -150,6 +181,10 @@ public static class ControllerTemplates
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine($"    // GET: {entity.Name}/Delete/{{id}}");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Delete", out var permDelete))
+        {
+            sb.AppendLine($"    [Permiso(\"{permDelete}\")]");
+        }
         sb.AppendLine($"    public async Task<IActionResult> Delete({keyType} id)");
         sb.AppendLine("    {");
         sb.AppendLine("        var result = await _service.GetByIdAsync(id);");
@@ -160,6 +195,10 @@ public static class ControllerTemplates
         sb.AppendLine($"    // POST: {entity.Name}/Delete/{{id}}");
         sb.AppendLine("    [HttpPost, ActionName(\"Delete\")]");
         sb.AppendLine("    [ValidateAntiForgeryToken]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Delete", out var permDeletePost))
+        {
+            sb.AppendLine($"    [Permiso(\"{permDeletePost}\")]");
+        }
         sb.AppendLine($"    public async Task<IActionResult> DeleteConfirmed({keyType} id)");
         sb.AppendLine("    {");
         sb.AppendLine("        await _service.DeleteAsync(id);");
@@ -215,66 +254,93 @@ public class HomeController : Controller
 }}
 ";
 
-    public static string GetEntityApiController(string webNamespace, string serviciosNamespace, EntityInfo entity)
+    public static string GetEntityApiController(string webApiNamespace, string serviciosNamespace, EntityInfo entity,
+        IReadOnlyDictionary<string, string>? permisoPorAccion = null)
     {
         var keyType = entity.KeyProperty.Type.Replace("?", "");
         var controllerName = $"{entity.Name}Controller";
 
-        return $@"using Microsoft.AspNetCore.Mvc;
-using {serviciosNamespace}.{entity.SchemaNamespace}.DTOs.{entity.Name};
-using {serviciosNamespace}.{entity.SchemaNamespace}.Services;
+        var sb = new StringBuilder();
+        sb.AppendLine("using Microsoft.AspNetCore.Mvc;");
+        if (permisoPorAccion is { Count: > 0 })
+        {
+            sb.AppendLine($"using {webApiNamespace}.Seguridad;");
+        }
+        sb.AppendLine($"using {serviciosNamespace}.{entity.SchemaNamespace}.DTOs.{entity.Name};");
+        sb.AppendLine($"using {serviciosNamespace}.{entity.SchemaNamespace}.Services;");
+        sb.AppendLine();
+        sb.AppendLine($"namespace {webApiNamespace}.{entity.SchemaNamespace}.Controllers;");
+        sb.AppendLine();
+        sb.AppendLine("[ApiController]");
+        sb.AppendLine($"[Route(\"api/[controller]\")]");
+        sb.AppendLine($"public class {controllerName} : ControllerBase");
+        sb.AppendLine("{");
+        sb.AppendLine($"    private readonly I{entity.Name}Service _service;");
+        sb.AppendLine();
+        sb.AppendLine($"    public {controllerName}(I{entity.Name}Service service)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        _service = service;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    [HttpGet]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Index", out var permIndex))
+        {
+            sb.AppendLine($"    [Permiso(\"{permIndex}\")]");
+        }
+        sb.AppendLine($"    public async Task<ActionResult<IEnumerable<{entity.Name}Dto>>> GetAll()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var result = await _service.GetAllAsync();");
+        sb.AppendLine("        return Ok(result);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine($"[HttpGet(\"{{id}}\")]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Details", out var permDetails))
+        {
+            sb.AppendLine($"    [Permiso(\"{permDetails}\")]");
+        }
+        sb.AppendLine($"    public async Task<ActionResult<{entity.Name}Dto>> GetById({keyType} id)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var result = await _service.GetByIdAsync(id);");
+        sb.AppendLine("        if (result == null) return NotFound();");
+        sb.AppendLine("        return Ok(result);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    [HttpPost]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Create", out var permCreate))
+        {
+            sb.AppendLine($"    [Permiso(\"{permCreate}\")]");
+        }
+        sb.AppendLine($"    public async Task<ActionResult<{entity.Name}Dto>> Create([FromBody] Create{entity.Name}Dto createDto)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var result = await _service.CreateAsync(createDto);");
+        sb.AppendLine($"        return CreatedAtAction(nameof(GetById), new {{ id = result.{entity.KeyProperty.Name} }}, result);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    [HttpPut(\"{{id}}\")]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Edit", out var permEdit))
+        {
+            sb.AppendLine($"    [Permiso(\"{permEdit}\")]");
+        }
+        sb.AppendLine($"    public async Task<IActionResult> Update({keyType} id, [FromBody] Update{entity.Name}Dto updateDto)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var success = await _service.UpdateAsync(id, updateDto);");
+        sb.AppendLine("        if (!success) return NotFound();");
+        sb.AppendLine("        return NoContent();");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    [HttpDelete(\"{{id}}\")]");
+        if (permisoPorAccion != null && permisoPorAccion.TryGetValue("Delete", out var permDelete))
+        {
+            sb.AppendLine($"    [Permiso(\"{permDelete}\")]");
+        }
+        sb.AppendLine($"    public async Task<IActionResult> Delete({keyType} id)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var success = await _service.DeleteAsync(id);");
+        sb.AppendLine("        if (!success) return NotFound();");
+        sb.AppendLine("        return NoContent();");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
 
-namespace {webNamespace}.{entity.SchemaNamespace}.Controllers;
-
-[ApiController]
-[Route(""api/[controller]"")]
-public class {controllerName} : ControllerBase
-{{
-    private readonly I{entity.Name}Service _service;
-
-    public {controllerName}(I{entity.Name}Service service)
-    {{
-        _service = service;
-    }}
-
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<{entity.Name}Dto>>> GetAll()
-    {{
-        var result = await _service.GetAllAsync();
-        return Ok(result);
-    }}
-
-    [HttpGet(""{{id}}"")]
-    public async Task<ActionResult<{entity.Name}Dto>> GetById({keyType} id)
-    {{
-        var result = await _service.GetByIdAsync(id);
-        if (result == null) return NotFound();
-        return Ok(result);
-    }}
-
-    [HttpPost]
-    public async Task<ActionResult<{entity.Name}Dto>> Create([FromBody] Create{entity.Name}Dto createDto)
-    {{
-        var result = await _service.CreateAsync(createDto);
-        return CreatedAtAction(nameof(GetById), new {{ id = result.{entity.KeyProperty.Name} }}, result);
-    }}
-
-    [HttpPut(""{{id}}"")]
-    public async Task<IActionResult> Update({keyType} id, [FromBody] Update{entity.Name}Dto updateDto)
-    {{
-        var success = await _service.UpdateAsync(id, updateDto);
-        if (!success) return NotFound();
-        return NoContent();
-    }}
-
-    [HttpDelete(""{{id}}"")]
-    public async Task<IActionResult> Delete({keyType} id)
-    {{
-        var success = await _service.DeleteAsync(id);
-        if (!success) return NotFound();
-        return NoContent();
-    }}
-}}
-";
+        return sb.ToString();
     }
 }

@@ -49,6 +49,11 @@ public static class CsProjTemplates
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include=""System.IdentityModel.Tokens.Jwt"" Version=""7.4.1"" />
+    <PackageReference Include=""Microsoft.Extensions.Configuration.Abstractions"" Version=""8.0.0"" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include=""..\{entidadesProjectName}\{entidadesProjectName}.csproj"" />
     <ProjectReference Include=""..\{datosProjectName}\{datosProjectName}.csproj"" />
   </ItemGroup>
@@ -90,6 +95,7 @@ public static class CsProjTemplates
 
   <ItemGroup>
     <PackageReference Include=""Swashbuckle.AspNetCore"" Version=""6.5.0"" />
+    <PackageReference Include=""Microsoft.AspNetCore.Authentication.JwtBearer"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.EntityFrameworkCore.Design"" Version=""8.0.0"">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CodeGenerator.CLI.Configuration;
 using CodeGenerator.CLI.Models;
 using CodeGenerator.CLI.Templates;
@@ -31,7 +31,7 @@ public class SolutionGenerator
         Directory.CreateDirectory(_options.WebApiPath);
 
         // 2. Crear archivos de proyectos (.csproj)
-        Console.WriteLine("[1/7] Creando archivos de proyecto (.csproj)...");
+        Console.WriteLine("[1/9] Creando archivos de proyecto (.csproj)...");
         File.WriteAllText(
             Path.Combine(_options.EntidadesPath, $"{_options.EntidadesProjectName}.csproj"),
             CsProjTemplates.GetEntidadesCsProj(_options.TargetFramework));
@@ -52,8 +52,8 @@ public class SolutionGenerator
             Path.Combine(_options.WebApiPath, $"{_options.WebApiProjectName}.csproj"),
             CsProjTemplates.GetWebApiCsProj(_options.TargetFramework, _options.ServiciosProjectName, _options.DatosProjectName, _options.EntidadesProjectName));
 
-        // 3. Crear archivo de solución .sln
-        Console.WriteLine("[2/7] Generando solución .NET (.sln)...");
+        // 3. Crear archivo de soluciÃ³n .sln
+        Console.WriteLine("[2/9] Generando soluciÃ³n .NET (.sln)...");
         ProcessRunner.RunCommand("dotnet", "new sln -n " + _options.ProjectName, _options.OutputPath);
         
         var entidadesCsproj = Path.Combine(_options.EntidadesProjectName, $"{_options.EntidadesProjectName}.csproj");
@@ -65,7 +65,7 @@ public class SolutionGenerator
         ProcessRunner.RunCommand("dotnet", $"sln add \"{entidadesCsproj}\" \"{datosCsproj}\" \"{serviciosCsproj}\" \"{webCsproj}\" \"{webApiCsproj}\"", _options.OutputPath);
 
         // 4. Extraer Esquema de la Base de Datos nativamente
-        Console.WriteLine("[3/8] Leyendo tablas, columnas y tipos desde SQL Server...");
+        Console.WriteLine("[3/9] Leyendo tablas, columnas y tipos desde SQL Server...");
         DatabaseSchema schema;
         try
         {
@@ -79,7 +79,19 @@ public class SolutionGenerator
 
         Console.WriteLine($"  Se encontraron {schema.Tables.Count} tablas en la base de datos.");
 
-        // 5. Cargar configuración manual de cascadas (opcional)
+        // Detectar esquema de seguridad (Usuarios, Roles, Permisos, etc.)
+        Console.WriteLine("[4/9] Detectando esquema de seguridad...");
+        var security = SecuritySchemaReader.ReadSecuritySchema(_options.ConnectionString, schema);
+        if (security.IsEnabled)
+        {
+            Console.WriteLine($"  Esquema de seguridad detectado en '{security.SchemaName}': {security.Permissions.Count} permisos encontrados.");
+        }
+        else
+        {
+            Console.WriteLine("  No se detectÃ³ esquema de seguridad (se generarÃ¡ sin mÃ³dulo de login).");
+        }
+
+        // 5. Cargar configuraciÃ³n manual de cascadas (opcional)
         List<CascadeConfig>? manualCascades = null;
         if (!string.IsNullOrWhiteSpace(_options.CascadeConfigPath))
         {
@@ -96,7 +108,7 @@ public class SolutionGenerator
 
             if (File.Exists(cascadePath))
             {
-                Console.WriteLine($"  Cargando configuración de cascadas desde: {cascadePath}");
+                Console.WriteLine($"  Cargando configuraciÃ³n de cascadas desde: {cascadePath}");
                 var json = File.ReadAllText(cascadePath);
                 manualCascades = JsonSerializer.Deserialize<List<CascadeConfig>>(json);
                 Console.WriteLine($"  Se encontraron {manualCascades?.Count ?? 0} configuraciones de cascada manual.");
@@ -109,11 +121,11 @@ public class SolutionGenerator
         }
 
         // 6. Generar Capa de Entidades
-        Console.WriteLine("[4/8] Generando modelos POCO en la capa de Entidades...");
+        Console.WriteLine("[5/9] Generando modelos POCO en la capa de Entidades...");
         var entities = EntityGenerator.GenerateEntities(_options.EntidadesProjectName, _options.EntidadesPath, schema, manualCascades);
 
         // 7. Generar Capa de Datos (DbContext + Repositorios)
-        Console.WriteLine("[5/8] Generando DbContext y Repositorios en la capa de Datos...");
+        Console.WriteLine("[6/9] Generando DbContext y Repositorios en la capa de Datos...");
         DbContextGenerator.GenerateDbContext(_options.DatosProjectName, _options.EntidadesProjectName, _options.DatosPath, _options.DbContextName, schema);
         
         var reposDir = Path.Combine(_options.DatosPath, "Repositories");
@@ -122,10 +134,38 @@ public class SolutionGenerator
         File.WriteAllText(Path.Combine(reposDir, "Repository.cs"), RepositoryTemplates.GetRepositoryImplementation(_options.DatosProjectName, _options.DbContextName));
 
         // 7. Generar DTOs, Mappings y Servicios en la capa de Servicios (agrupado por esquema)
-        Console.WriteLine("[6/8] Generando DTOs, Extensiones de Mapeo y Servicios...");
+        Console.WriteLine("[6/9] Generando DTOs, Extensiones de Mapeo y Servicios...");
         var serviciosCommonDir = Path.Combine(_options.ServiciosPath, "Services", "Common");
         Directory.CreateDirectory(serviciosCommonDir);
         File.WriteAllText(Path.Combine(serviciosCommonDir, "IService.cs"), ServiceTemplates.GetGenericServiceInterface(_options.ServiciosProjectName));
+
+        if (security.IsEnabled)
+        {
+            // MÃ³dulo de seguridad en la capa de Servicios
+            Console.WriteLine("  Generando servicios de seguridad (PasswordHasher, JWT, AuthService)...");
+            File.WriteAllText(Path.Combine(serviciosCommonDir, "PasswordHasher.cs"),
+                SecurityTemplates.GetPasswordHasher(_options.ServiciosProjectName));
+            File.WriteAllText(Path.Combine(serviciosCommonDir, "JwtTokenService.cs"),
+                SecurityTemplates.GetJwtTokenService(_options.ServiciosProjectName));
+
+            var authDtoDir = Path.Combine(_options.ServiciosPath, security.SchemaNamespace, "DTOs", "Auth");
+            Directory.CreateDirectory(authDtoDir);
+            File.WriteAllText(Path.Combine(authDtoDir, "LoginDto.cs"),
+                SecurityTemplates.GetLoginDto(_options.ServiciosProjectName, security));
+            File.WriteAllText(Path.Combine(authDtoDir, "LoginResultDto.cs"),
+                SecurityTemplates.GetLoginResultDto(_options.ServiciosProjectName, security));
+            File.WriteAllText(Path.Combine(authDtoDir, "RefreshTokenDto.cs"),
+                SecurityTemplates.GetRefreshTokenDto(_options.ServiciosProjectName, security));
+            File.WriteAllText(Path.Combine(authDtoDir, "MenuDto.cs"),
+                SecurityTemplates.GetMenuDtos(_options.ServiciosProjectName, security));
+
+            var authServiceDir = Path.Combine(_options.ServiciosPath, security.SchemaNamespace, "Services");
+            Directory.CreateDirectory(authServiceDir);
+            File.WriteAllText(Path.Combine(authServiceDir, "IAuthService.cs"),
+                SecurityTemplates.GetIAuthService(_options.ServiciosProjectName, _options.EntidadesProjectName, security));
+            File.WriteAllText(Path.Combine(authServiceDir, "AuthService.cs"),
+                SecurityTemplates.GetAuthService(_options.ServiciosProjectName, _options.EntidadesProjectName, _options.DatosProjectName, security));
+        }
 
         var entitiesBySchema = entities.GroupBy(e => e.SchemaName);
         foreach (var schemaGroup in entitiesBySchema)
@@ -154,7 +194,7 @@ public class SolutionGenerator
         }
 
         // 8. Generar Controladores MVC, Vistas, Layout y Program.cs en la capa Web
-        Console.WriteLine("[7/8] Generando proyecto Web MVC (Controladores, Vistas, Layout)...");
+        Console.WriteLine("[8/9] Generando proyecto Web MVC (Controladores, Vistas, Layout)...");
         var rootControllersDir = Path.Combine(_options.WebPath, "Controllers");
         Directory.CreateDirectory(rootControllersDir);
 
@@ -167,16 +207,53 @@ public class SolutionGenerator
 
             foreach (var entity in schemaGroup)
             {
+                var permisos = BuildPermisoMap(entity.Name, security);
                 File.WriteAllText(
                     Path.Combine(schemaControllersDir, $"{entity.Name}Controller.cs"),
-                    ControllerTemplates.GetEntityController(_options.WebProjectName, _options.ServiciosProjectName, entity));
+                    ControllerTemplates.GetEntityController(_options.WebProjectName, _options.ServiciosProjectName, entity, permisos));
             }
         }
 
-        // HomeController (raíz, sin esquema)
+        // HomeController (raÃ­z, sin esquema)
         File.WriteAllText(
             Path.Combine(rootControllersDir, "HomeController.cs"),
             ControllerTemplates.GetHomeController(_options.WebProjectName, _options.ServiciosProjectName));
+
+        // MÃ³dulo de seguridad (Web MVC)
+        if (security.IsEnabled)
+        {
+            Console.WriteLine("  Generando mÃ³dulo de seguridad Web (Login, Logout, Permisos, MenÃº)...");
+
+            // AccountController
+            File.WriteAllText(
+                Path.Combine(rootControllersDir, "AccountController.cs"),
+                SecurityTemplates.GetAccountController(_options.WebProjectName, _options.ServiciosProjectName, security));
+
+            // PermisoAttribute (MVC)
+            var segAttrDir = Path.Combine(_options.WebPath, "Seguridad");
+            Directory.CreateDirectory(segAttrDir);
+            File.WriteAllText(Path.Combine(segAttrDir, "PermisoAttribute.cs"),
+                SecurityTemplates.GetPermisoAttribute(_options.WebProjectName));
+
+            // Vistas de Account
+            var accountViewsDir = Path.Combine(_options.WebPath, "Views", "Account");
+            Directory.CreateDirectory(accountViewsDir);
+            File.WriteAllText(Path.Combine(accountViewsDir, "Login.cshtml"),
+                SecurityTemplates.GetLoginView(_options.WebProjectName, _options.ServiciosProjectName, security));
+            File.WriteAllText(Path.Combine(accountViewsDir, "AccessDenied.cshtml"),
+                SecurityTemplates.GetAccessDeniedView());
+
+            // ViewComponent de menÃº
+            var componentsDir = Path.Combine(_options.WebPath, "Components");
+            Directory.CreateDirectory(componentsDir);
+            File.WriteAllText(Path.Combine(componentsDir, "MenuViewComponent.cs"),
+                SecurityTemplates.GetMenuViewComponent(_options.WebProjectName, _options.ServiciosProjectName, security));
+
+            var menuViewDir = Path.Combine(_options.WebPath, "Views", "Shared", "Components", "Menu");
+            Directory.CreateDirectory(menuViewDir);
+            File.WriteAllText(Path.Combine(menuViewDir, "Default.cshtml"),
+                SecurityTemplates.GetMenuViewComponentView(_options.ServiciosProjectName, security));
+        }
 
         // Vistas para cada entidad (agrupado por esquema)
         foreach (var schemaGroup in entitiesBySchema)
@@ -205,7 +282,7 @@ public class SolutionGenerator
         Directory.CreateDirectory(sharedViewsDir);
 
         File.WriteAllText(Path.Combine(sharedViewsDir, "_Layout.cshtml"),
-            ViewTemplates.GetLayoutView(_options.WebProjectName, entities));
+            ViewTemplates.GetLayoutView(_options.WebProjectName, entities, security));
         File.WriteAllText(Path.Combine(sharedViewsDir, "_DataTable.cshtml"),
             ViewTemplates.GetDataTablePartial());
         File.WriteAllText(Path.Combine(sharedViewsDir, "_ValidationScriptsPartial.cshtml"),
@@ -228,7 +305,7 @@ public class SolutionGenerator
             Path.Combine(_options.WebPath, "Views", "_ViewImports.cshtml"),
             ViewTemplates.GetViewImports(_options.WebProjectName, _options.ServiciosProjectName));
 
-        // wwwroot (archivos estáticos)
+        // wwwroot (archivos estÃ¡ticos)
         var cssDir = Path.Combine(_options.WebPath, "wwwroot", "css");
         Directory.CreateDirectory(cssDir);
         File.WriteAllText(Path.Combine(cssDir, "site.css"), ViewTemplates.GetSiteCss());
@@ -240,7 +317,7 @@ public class SolutionGenerator
         // Program.cs
         File.WriteAllText(
             Path.Combine(_options.WebPath, "Program.cs"),
-            ProgramCsTemplate.GetProgramCs(_options.WebProjectName, _options.DatosProjectName, _options.ServiciosProjectName, _options.DbContextName, entities));
+            ProgramCsTemplate.GetProgramCs(_options.WebProjectName, _options.DatosProjectName, _options.ServiciosProjectName, _options.DbContextName, entities, security));
 
         // appsettings.json
         File.WriteAllText(
@@ -255,7 +332,7 @@ public class SolutionGenerator
             ProgramCsTemplate.GetLaunchSettingsJson());
 
         // 9. Generar proyecto Web API (REST)
-        Console.WriteLine("[8/8] Generando proyecto Web API REST (Controladores, Swagger)...");
+        Console.WriteLine("[9/9] Generando proyecto Web API REST (Controladores, Swagger)...");
         var apiControllersDir = Path.Combine(_options.WebApiPath, "Controllers");
         Directory.CreateDirectory(apiControllersDir);
 
@@ -267,16 +344,31 @@ public class SolutionGenerator
 
             foreach (var entity in schemaGroup)
             {
+                var permisos = BuildPermisoMap(entity.Name, security);
                 File.WriteAllText(
                     Path.Combine(schemaControllersDir, $"{entity.Name}Controller.cs"),
-                    ControllerTemplates.GetEntityApiController(_options.WebApiProjectName, _options.ServiciosProjectName, entity));
+                    ControllerTemplates.GetEntityApiController(_options.WebApiProjectName, _options.ServiciosProjectName, entity, permisos));
             }
+        }
+
+        // AuthController (JWT) y PermisoAttribute para WebApi
+        if (security.IsEnabled)
+        {
+            Console.WriteLine("  Generando mÃ³dulo de autenticaciÃ³n WebApi (JWT, RefreshToken)...");
+            File.WriteAllText(
+                Path.Combine(apiControllersDir, "AuthController.cs"),
+                SecurityTemplates.GetAuthApiController(_options.WebApiProjectName, _options.ServiciosProjectName, security));
+
+            var segAttrApiDir = Path.Combine(_options.WebApiPath, "Seguridad");
+            Directory.CreateDirectory(segAttrApiDir);
+            File.WriteAllText(Path.Combine(segAttrApiDir, "PermisoAttribute.cs"),
+                SecurityTemplates.GetApiPermisoAttribute(_options.WebApiProjectName));
         }
 
         // Program.cs
         File.WriteAllText(
             Path.Combine(_options.WebApiPath, "Program.cs"),
-            ProgramCsTemplate.GetWebApiProgramCs(_options.WebApiProjectName, _options.DatosProjectName, _options.ServiciosProjectName, _options.DbContextName, entities));
+            ProgramCsTemplate.GetWebApiProgramCs(_options.WebApiProjectName, _options.DatosProjectName, _options.ServiciosProjectName, _options.DbContextName, entities, security));
 
         // appsettings.json
         File.WriteAllText(
@@ -291,10 +383,30 @@ public class SolutionGenerator
             ProgramCsTemplate.GetLaunchSettingsJson("swagger"));
 
         Console.WriteLine($"\n=======================================================");
-        Console.WriteLine($" ¡Generación completada exitosamente!");
-        Console.WriteLine($" Ubicación de la Solución: {_options.OutputPath}");
+        Console.WriteLine($" Â¡GeneraciÃ³n completada exitosamente!");
+        Console.WriteLine($" UbicaciÃ³n de la SoluciÃ³n: {_options.OutputPath}");
         Console.WriteLine($"=======================================================\n");
 
         return true;
+    }
+
+    /// <summary>
+    /// Construye el mapa de permisos por acciÃ³n para un controlador (solo permisos existentes en BD).
+    /// Ej.: Usuarios -> Index="USUARIOS_VER", Create="USUARIOS_CREAR", Edit="USUARIOS_EDITAR", Delete="USUARIOS_ELIMINAR", Details="USUARIOS_DETALLE"
+    /// </summary>
+    private static IReadOnlyDictionary<string, string>? BuildPermisoMap(string controllerName, SecuritySchemaInfo? security)
+    {
+        if (security is not { IsEnabled: true }) return null;
+
+        var mapa = new Dictionary<string, string>();
+        foreach (var perm in security.Permissions)
+        {
+            if (!perm.Controller.Equals(controllerName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!mapa.ContainsKey(perm.Action))
+            {
+                mapa[perm.Action] = perm.Code;
+            }
+        }
+        return mapa.Count > 0 ? mapa : null;
     }
 }
