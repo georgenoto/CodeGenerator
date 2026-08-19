@@ -353,25 +353,21 @@ public class AuthService : IAuthService
             .Select(rp => rp.IdPermiso).Distinct().ToList();
         if (permisoIds.Count == 0) return new List<MenuDto>();
 
-        // Rutas permitidas: /Usuarios/Index, /Usuarios/Create, etc.
-        var rutasPermitidas = (await _permisos.FindAsync(p => permisoIds.Contains(p.Id) && p.Activo))
-            .Select(p => p.Codigo ?? """")
-            .Where(r => !string.IsNullOrEmpty(r))
-            .ToList();
+        // Opciones accesibles por el usuario (FK directa Permisos.IdOpcion -> Opciones.Id)
+        var opcionIds = (await _permisos.FindAsync(p => permisoIds.Contains(p.Id) && p.Activo))
+            .Select(p => p.IdOpcion).Distinct().ToList();
+        if (opcionIds.Count == 0) return new List<MenuDto>();
 
-        var modulos = (await _modulos.FindAsync(x => x.Activo))
+        var modulos = (await _modulos.FindAsync(x => x.Activo && x.VisibleMenu))
             .OrderBy(x => x.OrdenMenu).ToList();
-        var opciones = (await _opciones.FindAsync(x => x.Activo && x.VisibleMenu)).ToList();
+        var opciones = (await _opciones.FindAsync(x => opcionIds.Contains(x.Id) && x.Activo && x.VisibleMenu))
+            .OrderBy(x => x.OrdenMenu).ToList();
 
         var menu = new List<MenuDto>();
         foreach (var modulo in modulos)
         {{
             var items = opciones
                 .Where(x => x.IdModulo == modulo.Id)
-                .Where(x => rutasPermitidas.Any(r =>
-                    !string.IsNullOrEmpty(x.Ruta) &&
-                    r.StartsWith(x.Ruta.Trim('/'), StringComparison.OrdinalIgnoreCase)))
-                .OrderBy(x => x.OrdenMenu)
                 .Select(x => new OpcionMenuDto
                 {{
                     Nombre = x.Nombre,
@@ -681,7 +677,7 @@ public class MenuViewComponent : ViewComponent
         <li class=""nav-item"">
             <a class=""nav-link text-secondary small text-uppercase fw-bold px-2 d-flex justify-content-between align-items-center""
                data-bs-toggle=""collapse"" href=""#{{collapseId}}"" role=""button"" aria-expanded=""true"">
-                <span>@modulo.Modulo</span>
+                <span><i class=""@(modulo.Icono ?? ""bi bi-folder"")""></i> @modulo.Modulo</span>
                 <i class=""bi bi-chevron-down""></i>
             </a>
             <div class=""collapse show"" id=""@collapseId"">
@@ -689,7 +685,7 @@ public class MenuViewComponent : ViewComponent
                     @foreach (var opcion in modulo.Opciones)
                     {{
                         <li class=""nav-item"">
-                            <a class=""nav-link text-white"" asp-controller=""@opcion.Controller"" asp-action=""@opcion.Action"">
+                            <a class=""nav-link text-white"" asp-controller=""@opcion.Controller"" asp-action=""@opcion.Action"" asp-area="""">
                                 <i class=""@(opcion.Icono ?? ""bi bi-table"")""></i> @opcion.Nombre
                             </a>
                         </li>
