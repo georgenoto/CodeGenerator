@@ -10,10 +10,10 @@ Console.WriteLine(@"
 
 var options = new GeneratorOptions();
 options.ProjectName = "FutbolData";
-//options.ConnectionString = "Data Source=BBDDPBA02\\INTEGRACION; Initial Catalog=dbFutbolData; User ID=userDesarrollo; Password=desarrollo;TrustServerCertificate=True;";
-//options.OutputPath = "C:\\D\\Proyecto Generador\\";
-options.ConnectionString = "Data Source=GNOTO;Initial Catalog=dbFutbolData;Integrated Security=True;Trust Server Certificate=True";
-options.OutputPath = "D:\\Datos GNOTO\\Code Source\\FutbolData\\";
+options.ConnectionString = "Data Source=BBDDPBA02\\INTEGRACION; Initial Catalog=dbFutbolData; User ID=userDesarrollo; Password=desarrollo;TrustServerCertificate=True;";
+options.OutputPath = "C:\\D\\Proyecto Generador\\";
+//options.ConnectionString = "Data Source=GNOTO;Initial Catalog=dbFutbolData;Integrated Security=True;Trust Server Certificate=True";
+//options.OutputPath = "D:\\Datos GNOTO\\Code Source\\FutbolData\\";
 options.CascadeConfigPath = "cascades.json";
 // Interactivo o por argumentos
 if (args.Length > 0)

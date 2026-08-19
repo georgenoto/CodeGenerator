@@ -63,10 +63,10 @@ UNIQUE(Nombre);
 -- ============================================================
 CREATE TABLE [Seguridad].[UsuarioRol]
 (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
     IdUsuario INT NOT NULL,
     IdRol INT NOT NULL,
     FechaAsignacion DATETIME NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT PK_UsuarioRol PRIMARY KEY(IdUsuario, IdRol),
     CONSTRAINT FK_UsuarioRol_Usuario FOREIGN KEY(IdUsuario) REFERENCES [Seguridad].[Usuarios](Id),
     CONSTRAINT FK_UsuarioRol_Rol FOREIGN KEY(IdRol) REFERENCES [Seguridad].[Roles](Id)
 );
@@ -142,10 +142,10 @@ UNIQUE(Codigo);
 -- ============================================================
 CREATE TABLE [Seguridad].[RolPermiso]
 (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
     IdRol INT NOT NULL,
     IdPermiso INT NOT NULL,
     FechaAsignacion DATETIME NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT PK_RolPermiso PRIMARY KEY(IdRol, IdPermiso),
     CONSTRAINT FK_RolPermiso_Rol FOREIGN KEY(IdRol) REFERENCES [Seguridad].[Roles](Id),
     CONSTRAINT FK_RolPermiso_Permiso FOREIGN KEY(IdPermiso) REFERENCES [Seguridad].[Permisos](Id)
 );
@@ -183,19 +183,22 @@ CREATE TABLE [Seguridad].[RefreshTokens]
     CONSTRAINT FK_RefreshTokens_Usuario FOREIGN KEY(IdUsuario) REFERENCES [Seguridad].[Usuarios](Id)
 );
 GO
-CREATE TABLE [Base].[TipoClasificadores] (
+CREATE TABLE [Base].[TipoParametros] (
    Id INT IDENTITY(1,1) PRIMARY KEY,
    Descripcion VARCHAR(300),
+   Orden INT,
    Estado bit
 );
 GO
-CREATE TABLE [Base].[Clasificadores](
+CREATE TABLE [Base].[Parametros](
 	Id INT IDENTITY(1,1) PRIMARY KEY,
-	IdTipoClasificador INT NOT NULL,
+	IdTipoParametro INT NOT NULL,
 	Descripcion VARCHAR(300),
 	Abreviacion VARCHAR(50),
+	Codigo VARCHAR(10),
+	Orden INT,
 	Estado bit,
-	CONSTRAINT FK_TipoClasificador FOREIGN KEY (IdTipoClasificador) REFERENCES [Base].[TipoClasificadores](Id)
+	CONSTRAINT FK_TipoParametro FOREIGN KEY (IdTipoParametro) REFERENCES [Base].[TipoParametros](Id)
 )
 GO
 CREATE TABLE [Base].[Temporadas](
@@ -236,13 +239,6 @@ CREATE TABLE [Metrica].[Partidos] (
     IdVisitante INT NOT NULL,
     Fecha DATETIME NOT NULL,
     IdTemporada INT NOT NULL,
-	-- Marcadores Finales y Descanso
-    goles_local INT,
-    goles_visitante INT,
-    goles_local_PrimerTiempo INT,
-    goles_visitante_PrimerTiempo INT,
-	goles_local_SegundoTiempo INT,
-    goles_visitante_SegundoTiempo INT,
     CONSTRAINT FK_Partidos_Ligas FOREIGN KEY (IdLiga) REFERENCES [Base].[Ligas](Id),
     CONSTRAINT FK_Partidos_Local FOREIGN KEY (IdLocal) REFERENCES [Base].[Equipos](Id),
     CONSTRAINT FK_Partidos_Visitante FOREIGN KEY (IdVisitante) REFERENCES [Base].[Equipos](Id),
@@ -254,7 +250,7 @@ CREATE TABLE [Metrica].[EstadisticasPartido] (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     IdPartido INT NOT NULL,
     IdEquipo INT NOT NULL,
-    Condicion VARCHAR(9) NOT NULL CHECK(Condicion IN ('Local', 'Visitante')),
+    IdpCondicion INT NOT NULL, -- 'Local', 'Visitante'
     Posesion DECIMAL(5,2), -- Permite guardar porcentajes con decimales ej: 55.40
 	TirosTotales INT DEFAULT 0,
     TirosArco INT DEFAULT 0,
@@ -263,22 +259,17 @@ CREATE TABLE [Metrica].[EstadisticasPartido] (
 	faltas INT,
     tarjetas_amarillas INT,
     tarjetas_rojas INT,
+	goles_PrimerTiempo INT DEFAULT 0,
+	goles_SegundoTiempo INT DEFAULT 0,
+	TotalGoles INT DEFAULT 0,
+    IdpResultado INT NOT NULL, -- 'Ganador','Perdido', 'Empate'	
     CONSTRAINT FK_Estadisticas_Partidos FOREIGN KEY (IdPartido) REFERENCES [Metrica].[Partidos](Id) ON DELETE CASCADE,
-    CONSTRAINT FK_Estadisticas_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id)
+    CONSTRAINT FK_Estadisticas_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),
+	CONSTRAINT FK_Condicion_Equipo FOREIGN KEY (IdpCondicion) REFERENCES [Base].[Parametros](Id),
+	CONSTRAINT FK_Resultado_Equipo FOREIGN KEY (IdpResultado) REFERENCES [Base].[Parametros](Id),
 );
 
--- 6. Tabla de Eventos Detallados (Goles y Tarjetas por tiempos)
-CREATE TABLE [Metrica].[EventosDetalle] (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    IdPartido INT NOT NULL,
-    IdEquipo INT NOT NULL,
-    IdcTipoEvento INT NOT NULL, ----(TipoEvento IN ('Gol', 'Tarjeta Amarilla', 'Tarjeta Roja')),
-    Minuto INT NOT NULL,
-    Periodo VARCHAR(15) NOT NULL CHECK(Periodo IN ('Primer Tiempo', 'Segundo Tiempo')),
-    CONSTRAINT FK_Eventos_Partidos FOREIGN KEY (IdPartido) REFERENCES [Metrica].[Partidos](Id) ON DELETE CASCADE,
-    CONSTRAINT FK_Eventos_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),
-	CONSTRAINT FK_Clasificador FOREIGN KEY (IdcTipoEvento) REFERENCES [Base].[Clasificadores](Id)
-);
+
 
 go
 --- DATOS BASES
@@ -301,11 +292,21 @@ INSERT INTO [Seguridad].[Modulos] VALUES ('Metrica','METRICA','','/Metrica','',3
 GO
 INSERT INTO [Seguridad].[Opciones] VALUES (1,'Usuarios','USUARIOS','','/Usuarios','bi bi-table',1,1,1)
 INSERT INTO [Seguridad].[Opciones] VALUES (1,'Roles','ROLES','','/Roles','bi bi-table',2,1,1)
-INSERT INTO [Seguridad].[Opciones] VALUES (1,'UsuarioRol','USUARIOSROL','','/UsuarioRol','bi bi-table',3,1,1)
-INSERT INTO [Seguridad].[Opciones] VALUES (1,'Modulos','MODULOS','','/Modulos','bi bi-table',4,1,1)
-INSERT INTO [Seguridad].[Opciones] VALUES (1,'Permisos','PERMISOS','','/Permisos','bi bi-table',5,1,1)
-INSERT INTO [Seguridad].[Opciones] VALUES (1,'RolPermiso','ROLPERMISO','','/RolPermiso','bi bi-table',6,1,1)
-INSERT INTO [Seguridad].[Opciones] VALUES (1,'Opciones','OPCIONES','','/Opciones','bi bi-table',7,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Rol Por Usuario','USUARIOSROL','','/UsuarioRol','bi bi-table',3,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Modulos del Sistema','MODULOS','','/Modulos','bi bi-table',4,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Permisos','PERMISOS','','/Permisos','bi bi-table',6,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Permisos Por Rol','ROLPERMISO','','/RolPermiso','bi bi-table',7,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (1,'Opciones Por Modulo','OPCIONES','Tabla sirve para el menu dinamico','/Opciones','bi bi-table',5,1,1)
+
+INSERT INTO [Seguridad].[Opciones] VALUES (2,'Tipo Parametros','TIPOPARAMETROS','','/TipoParametros','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (2,'Parametros','PARAMETROS','','/Parametros','bi bi-table',2,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (2,'Equipos','EQUIPOS','','/Equipos','bi bi-table',3,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (2,'Liga','LIGAS','','/Ligas','bi bi-table',4,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (2,'Liga y Equipo','LIGAEQUIPO','','/LigaEquipos','bi bi-table',5,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (2,'Temporada','TEMPORADAS','','/Temporadas','bi bi-table',6,1,1)
+
+INSERT INTO [Seguridad].[Opciones] VALUES (3,'Partidos','PARTIDOS','','/Partidos','bi bi-table',1,1,1)
+INSERT INTO [Seguridad].[Opciones] VALUES (3,'Estadisticas Por Partido','ESTADISTICASPARTIDO','','/EstadisticasPartido','bi bi-table',2,1,1)
 
 GO
 INSERT INTO [Seguridad].[Permisos] VALUES (1,'/Usuarios/Index','','USUARIOS_VER',1)
@@ -352,6 +353,55 @@ INSERT INTO [Seguridad].[Permisos] VALUES (7,'/Opciones/Edit','','OPCIONES_EDITA
 INSERT INTO [Seguridad].[Permisos] VALUES (7,'/Opciones/Delete','','OPCIONES_ELIMINAR',1)
 INSERT INTO [Seguridad].[Permisos] VALUES (7,'/Opciones/Details','','OPCIONES_DETALLE',1)
 
+INSERT INTO [Seguridad].[Permisos] VALUES (8,'/TipoParametros/Index','','TIPOPARAMETROS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (8,'/TipoParametros/Create','','TIPOPARAMETROS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (8,'/TipoParametros/Edit','','TIPOPARAMETROS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (8,'/TipoParametros/Delete','','TIPOPARAMETROS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (8,'/TipoParametros/Details','','TIPOPARAMETROS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (9,'/Parametros/Index','','PARAMETROS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (9,'/Parametros/Create','','PARAMETROS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (9,'/Parametros/Edit','','PARAMETROS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (9,'/Parametros/Delete','','PARAMETROS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (9,'/Parametros/Details','','PARAMETROS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Index','','EQUIPOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Create','','EQUIPOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Edit','','EQUIPOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Delete','','EQUIPOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Details','','EQUIPOS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Index','','LIGAS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Create','','LIGAS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Edit','','LIGAS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Delete','','LIGAS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Details','','LIGAS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Index','','LIGAEQUIPO_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Create','','LIGAEQUIPO_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Edit','','LIGAEQUIPO_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Delete','','LIGAEQUIPO_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Details','','LIGAEQUIPO_DETALLE',1)
+
+
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Index','','TEMPORADAS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Create','','TEMPORADAS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Edit','','TEMPORADAS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Delete','','TEMPORADAS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Details','','TEMPORADAS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Index','','PARTIDOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Create','','PARTIDOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Edit','','PARTIDOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Delete','','PARTIDOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Details','','PARTIDOS_DETALLE',1)
+
+INSERT INTO [Seguridad].[Permisos] VALUES (15,'/EstadisticasPartidos/Index','','ESTADISTICASPARTIDOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (15,'/EstadisticasPartidos/Create','','ESTADISTICASPARTIDOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (15,'/EstadisticasPartidos/Edit','','ESTADISTICASPARTIDOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (15,'/EstadisticasPartidos/Delete','','ESTADISTICASPARTIDOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (15,'/EstadisticasPartidos/Details','','ESTADISTICASPARTIDOS_DETALLE',1)
+
 GO
 
 INSERT INTO [Seguridad].[RolPermiso] VALUES(1,1,GETDATE())
@@ -389,6 +439,57 @@ INSERT INTO [Seguridad].[RolPermiso] VALUES(1,32,GETDATE())
 INSERT INTO [Seguridad].[RolPermiso] VALUES(1,33,GETDATE())
 INSERT INTO [Seguridad].[RolPermiso] VALUES(1,34,GETDATE())
 INSERT INTO [Seguridad].[RolPermiso] VALUES(1,35,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,36,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,37,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,38,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,39,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,40,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,41,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,42,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,43,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,44,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,45,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,46,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,47,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,48,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,49,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,50,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,51,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,52,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,53,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,54,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,55,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,56,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,57,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,58,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,59,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,60,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,61,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,62,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,63,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,64,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,65,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,66,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,67,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,68,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,69,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,70,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,71,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,72,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,73,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,74,GETDATE())
+INSERT INTO [Seguridad].[RolPermiso] VALUES(1,75,GETDATE())
 
+GO
 
+INSERT INTO [Base].[TipoParametros] VALUES ('Condicion Equipo Partido',1,1)
+INSERT INTO [Base].[TipoParametros] VALUES ('Resultado Equipo Partido',2,1)
 
+GO
+
+INSERT INTO [Base].[Parametros] VALUES (1,'Local','Juega de Local','LOC',1,1)
+INSERT INTO [Base].[Parametros] VALUES (1,'Visitante','Juega de Visitante','VIS',2,1)
+
+INSERT INTO [Base].[Parametros] VALUES (2,'Ganador','Ganador','GAN',1,1)
+INSERT INTO [Base].[Parametros] VALUES (2,'Perdido','Perdido','PER',1,1)
+INSERT INTO [Base].[Parametros] VALUES (2,'Empate','Empate','EMP',1,1)
