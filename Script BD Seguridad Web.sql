@@ -221,7 +221,8 @@ CREATE TABLE [Base].[Ligas] (
 -- 3. Tabla de Equipos
 CREATE TABLE [Base].[Equipos] (
     Id INT IDENTITY(1,1) PRIMARY KEY,
-    NombreEquipo VARCHAR(100) NOT NULL UNIQUE,
+    NombreEquipo VARCHAR(100) NOT NULL,
+	Abreviatura [varchar](20) NULL,
 	Pais VARCHAR(50) NOT NULL,
 );
 
@@ -229,7 +230,10 @@ CREATE TABLE [Base].LigaEquipos(
     Id INT IDENTITY PRIMARY KEY,
     IdLiga INT,
     IdEquipo INT,
-    IdTemporada INT
+    IdTemporada INT,
+	CONSTRAINT FK_LE_Ligas FOREIGN KEY (IdLiga) REFERENCES [Base].[Ligas](Id),
+	CONSTRAINT FK_LE_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),
+	CONSTRAINT FK_LE_Temporadas FOREIGN KEY (IdTemporada) REFERENCES [Base].[Temporadas](Id),
 )
 -- 4. Tabla de Partidos
 CREATE TABLE [Metrica].[Partidos] (
