@@ -62,6 +62,7 @@ public class EntityGenerator
                         ep.FkReferencedTable = col.FkReferencedTable;
                         ep.FkReferencedColumn = col.FkReferencedColumn;
                         ep.FkReferencedDisplayColumn = col.FkReferencedDisplayColumn;
+                        ep.FkParametrosIdTipoParametro = col.FkParametrosIdTipoParametro;
 
                         // Nombre de navegación único: si hay varias FK a la misma tabla,
                         // se agrega el sufijo de la columna (ej. IdLocal -> EquiposLocal).

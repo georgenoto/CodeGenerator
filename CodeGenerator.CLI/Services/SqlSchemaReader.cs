@@ -145,6 +145,38 @@ public class SqlSchemaReader
             }
         }
 
+        // Para FKs que apuntan a Parametros, obtener IdTipoParametro desde la tabla TipoParametros
+        var parametrosFks = fkList.Where(fk => fk.RefTable == "Parametros").ToList();
+        if (parametrosFks.Count > 0)
+        {
+            var tipoParametrosMap = ReadTipoParametrosMap(connection);
+            foreach (var fk in parametrosFks)
+            {
+                var parentTable = schema.Tables.FirstOrDefault(t =>
+                    t.SchemaName == fk.ParentSchema && t.TableName == fk.ParentTable);
+                if (parentTable == null) continue;
+
+                var parentColumn = parentTable.Columns.FirstOrDefault(c =>
+                    c.ColumnName == fk.ParentColumn);
+                if (parentColumn == null) continue;
+
+                var colName = fk.ParentColumn;
+                // Quitar prefijos comunes (Idp_, Id_, p_) para matchear con la descripción de TipoParametros
+                var cleanName = colName;
+                if (cleanName.StartsWith("Idp", StringComparison.OrdinalIgnoreCase) && cleanName.Length > 3)
+                    cleanName = cleanName.Substring(3);
+                else if (cleanName.StartsWith("Id", StringComparison.OrdinalIgnoreCase) && cleanName.Length > 2)
+                    cleanName = cleanName.Substring(2);
+                else if (cleanName.StartsWith("p", StringComparison.OrdinalIgnoreCase) && cleanName.Length > 1 && char.IsUpper(cleanName[1]))
+                    cleanName = cleanName.Substring(1);
+
+                if (tipoParametrosMap.TryGetValue(cleanName, out var idTipoParametro))
+                {
+                    parentColumn.FkParametrosIdTipoParametro = idTipoParametro;
+                }
+            }
+        }
+
         // Establecer DisplayColumn para cada tabla
         foreach (var table in schema.Tables)
         {
@@ -203,5 +235,24 @@ public class SqlSchemaReader
         }
 
         return baseType;
+    }
+
+    private static Dictionary<string, int> ReadTipoParametrosMap(SqlConnection connection)
+    {
+        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var query = "SELECT Id, Descripcion FROM [Base].[TipoParametros] ORDER BY Id";
+        using var cmd = new SqlCommand(query, connection);
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            var id = reader.GetInt32(0);
+            var desc = reader.GetString(1);
+            var firstWord = desc.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (!string.IsNullOrEmpty(firstWord))
+            {
+                map[firstWord] = id;
+            }
+        }
+        return map;
     }
 }

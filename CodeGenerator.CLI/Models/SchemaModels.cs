@@ -13,6 +13,7 @@ public class ColumnMetadata
     public string? FkReferencedTable { get; set; }
     public string? FkReferencedColumn { get; set; }
     public string? FkReferencedDisplayColumn { get; set; }
+    public int? FkParametrosIdTipoParametro { get; set; }
     public int? MaxLength { get; set; }
 }
 

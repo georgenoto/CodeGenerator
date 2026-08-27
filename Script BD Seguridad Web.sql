@@ -242,10 +242,12 @@ CREATE TABLE [Metrica].[Partidos] (
     IdVisitante INT NOT NULL,
     Fecha DATETIME NOT NULL,
     IdTemporada INT NOT NULL,
+	IdpEstado INT NOT NULL,
     CONSTRAINT FK_Partidos_Ligas FOREIGN KEY (IdLiga) REFERENCES [Base].[Ligas](Id),
     CONSTRAINT FK_Partidos_Local FOREIGN KEY (IdLocal) REFERENCES [Base].[Equipos](Id),
     CONSTRAINT FK_Partidos_Visitante FOREIGN KEY (IdVisitante) REFERENCES [Base].[Equipos](Id),
-	CONSTRAINT FK_Temporada FOREIGN KEY (IdTemporada) REFERENCES [Base].[Temporadas](Id)
+	CONSTRAINT FK_Temporada FOREIGN KEY (IdTemporada) REFERENCES [Base].[Temporadas](Id),
+	CONSTRAINT FK_EstadoPartido FOREIGN KEY (IdpEstado) REFERENCES [Base].[Parametros](Id)
 );
 
 -- 5. Tabla de Estadísticas de Partido (Totales por equipo)
@@ -255,16 +257,15 @@ CREATE TABLE [Metrica].[EstadisticasPartido] (
     IdEquipo INT NOT NULL,
     IdpCondicion INT NOT NULL, -- 'Local', 'Visitante'
     Posesion DECIMAL(5,2), -- Permite guardar porcentajes con decimales ej: 55.40
-	TirosTotales INT DEFAULT 0,
+	goles_PrimerTiempo INT DEFAULT 0,
+	goles_SegundoTiempo INT DEFAULT 0,
+	TotalGoles INT DEFAULT 0,
     TirosArco INT DEFAULT 0,
     Corners INT DEFAULT 0,
 	offsides INT DEFAULT 0,
 	faltas INT,
     tarjetas_amarillas INT,
     tarjetas_rojas INT,
-	goles_PrimerTiempo INT DEFAULT 0,
-	goles_SegundoTiempo INT DEFAULT 0,
-	TotalGoles INT DEFAULT 0,
     IdpResultado INT NOT NULL, -- 'Ganador','Perdido', 'Empate'	
     CONSTRAINT FK_Estadisticas_Partidos FOREIGN KEY (IdPartido) REFERENCES [Metrica].[Partidos](Id) ON DELETE CASCADE,
     CONSTRAINT FK_Estadisticas_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),

@@ -108,7 +108,21 @@ public static class ControllerTemplates
         sb.AppendLine("    {");
         foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            if (fkTable == "Parametros")
+            {
+                var fkParametrosList = fkProps.Where(f => f.FkReferencedTable == "Parametros").ToList();
+                foreach (var fk in fkParametrosList)
+                {
+                    if (fk.FkParametrosIdTipoParametro.HasValue)
+                        sb.AppendLine($"        await Populate{fk.Name}DropdownAsync();");
+                    else
+                        sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            }
         }
         sb.AppendLine($"        return View(\"{viewBase}/Create.cshtml\", new Create{entity.Name}Dto());");
         sb.AppendLine("    }");
@@ -129,7 +143,21 @@ public static class ControllerTemplates
         sb.AppendLine("        }");
         foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            if (fkTable == "Parametros")
+            {
+                var fkParametrosList = fkProps.Where(f => f.FkReferencedTable == "Parametros").ToList();
+                foreach (var fk in fkParametrosList)
+                {
+                    if (fk.FkParametrosIdTipoParametro.HasValue)
+                        sb.AppendLine($"        await Populate{fk.Name}DropdownAsync();");
+                    else
+                        sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            }
         }
         sb.AppendLine($"        return View(\"{viewBase}/Create.cshtml\", createDto);");
         sb.AppendLine("    }");
@@ -153,7 +181,21 @@ public static class ControllerTemplates
         sb.AppendLine("        };");
         foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            if (fkTable == "Parametros")
+            {
+                var fkParametrosList = fkProps.Where(f => f.FkReferencedTable == "Parametros").ToList();
+                foreach (var fk in fkParametrosList)
+                {
+                    if (fk.FkParametrosIdTipoParametro.HasValue)
+                        sb.AppendLine($"        await Populate{fk.Name}DropdownAsync();");
+                    else
+                        sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            }
         }
         sb.AppendLine($"        return View(\"{viewBase}/Edit.cshtml\", updateDto);");
         sb.AppendLine("    }");
@@ -175,7 +217,21 @@ public static class ControllerTemplates
         sb.AppendLine("        }");
         foreach (var fkTable in fkTables)
         {
-            sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            if (fkTable == "Parametros")
+            {
+                var fkParametrosList = fkProps.Where(f => f.FkReferencedTable == "Parametros").ToList();
+                foreach (var fk in fkParametrosList)
+                {
+                    if (fk.FkParametrosIdTipoParametro.HasValue)
+                        sb.AppendLine($"        await Populate{fk.Name}DropdownAsync();");
+                    else
+                        sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"        await Populate{fkTable}DropdownAsync();");
+            }
         }
         sb.AppendLine($"        return View(\"{viewBase}/Edit.cshtml\", updateDto);");
         sb.AppendLine("    }");
@@ -218,7 +274,8 @@ public static class ControllerTemplates
             sb.AppendLine("    }");
             sb.AppendLine();
         }
-        foreach (var fkTable in fkTables)
+        // Generate grouped Populate methods for non-Parametros FK tables
+        foreach (var fkTable in fkTables.Where(t => t != "Parametros"))
         {
             sb.AppendLine($"    private async Task Populate{fkTable}DropdownAsync()");
             sb.AppendLine("    {");
@@ -228,6 +285,36 @@ public static class ControllerTemplates
                 var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
                 sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof({fkTable}Dto.{fk.FkReferencedColumn}), \"{displayCol}\");");
             }
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        // Generate grouped PopulateParametrosDropdownAsync as fallback (FKs to Parametros without IdTipoParametro)
+        var fkParametrosWithoutId = fkProps.Where(f => f.FkReferencedTable == "Parametros" && !f.FkParametrosIdTipoParametro.HasValue).ToList();
+        if (fkParametrosWithoutId.Count > 0)
+        {
+            sb.AppendLine($"    private async Task PopulateParametrosDropdownAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var items = await _ParametrosService.GetAllAsync();");
+            foreach (var fk in fkParametrosWithoutId)
+            {
+                var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
+                sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof(ParametrosDto.Id), \"{displayCol}\");");
+            }
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        // Generate individual Populate methods for FKs to Parametros with IdTipoParametro
+        var fkParametrosWithId = fkProps.Where(f => f.FkReferencedTable == "Parametros" && f.FkParametrosIdTipoParametro.HasValue).ToList();
+        foreach (var fk in fkParametrosWithId)
+        {
+            var idTipo = fk.FkParametrosIdTipoParametro!.Value;
+            var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
+            sb.AppendLine($"    private async Task Populate{fk.Name}DropdownAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        var items = await _ParametrosService.GetAllAsync({idTipo});");
+            sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof(ParametrosDto.Id), \"{displayCol}\");");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

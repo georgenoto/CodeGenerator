@@ -17,6 +17,7 @@ public class EntityProperty
     public string? FkReferencedDisplayColumn { get; set; }
     public string? FkNavigationName { get; set; }
     public string? FkDisplayPropertyName { get; set; }
+    public int? FkParametrosIdTipoParametro { get; set; }
     public string? CascadeParentProperty { get; set; }
     public string? CascadeFilterProperty { get; set; }
     public bool GenerateGetByEndpoint { get; set; }
