@@ -77,7 +77,7 @@ public interface IService<TDto, TCreateDto, TUpdateDto, TKey>
             sb.AppendLine();
             sb.AppendLine($"    public async Task<IEnumerable<{entity.Name}Dto>> GetAllAsync(int idTipoParametro)");
             sb.AppendLine("    {");
-            sb.AppendLine("        var entities = await _repository.FindAsync(p => p.IdTipoParametro == idTipoParametro);");
+            sb.AppendLine("        var entities = await _repository.FindAsync(p => p.idTipoParametro == idTipoParametro);");
             sb.AppendLine("        return entities.Select(e => e.ToDto());");
             sb.AppendLine("    }");
         }

@@ -422,7 +422,7 @@ public static class ViewTemplates
 @{
     var headers = ViewData[""ColumnHeaders""] as string[] ?? ViewData[""Columns""] as string[] ?? System.Array.Empty<string>();
     var props = ViewData[""ColumnProperties""] as string[] ?? headers;
-    var keyName = ViewData[""KeyName""] as string ?? ""Id"";
+    var keyName = ViewData[""KeyName""] as string ?? ""id"";
     var pageSize = ViewData[""PageSize""] is int ps ? ps : 20;
 }
 

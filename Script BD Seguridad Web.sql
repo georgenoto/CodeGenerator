@@ -21,24 +21,24 @@ GO
 -- ============================================================
 CREATE TABLE [Seguridad].[Usuarios]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    Usuario VARCHAR(50) NOT NULL,
-    Correo VARCHAR(150) NOT NULL,
-    PasswordHash VARCHAR(500) NOT NULL,
-    NombreCompleto VARCHAR(200) NOT NULL,
-    Activo BIT NOT NULL DEFAULT 1,
-    FechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
-    FechaActualizacion DATETIME NULL,
-    UltimoAcceso DATETIME NULL
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    usuario VARCHAR(50) NOT NULL,
+    correo VARCHAR(150) NOT NULL,
+    passwordHash VARCHAR(500) NOT NULL,
+    nombreCompleto VARCHAR(200) NOT NULL,
+    activo BIT NOT NULL DEFAULT 1,
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    fechaActualizacion DATETIME NULL,
+    ultimoAcceso DATETIME NULL
 );
 
 ALTER TABLE [Seguridad].[Usuarios]
 ADD CONSTRAINT UQ_Usuarios_Usuario
-UNIQUE(Usuario);
+UNIQUE(usuario);
 
 ALTER TABLE [Seguridad].[Usuarios]
 ADD CONSTRAINT UQ_Usuarios_Correo
-UNIQUE(Correo);
+UNIQUE(correo);
 
 
 -- ============================================================
@@ -46,16 +46,16 @@ UNIQUE(Correo);
 -- ============================================================
 CREATE TABLE [Seguridad].[Roles]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    Nombre VARCHAR(100) NOT NULL,
-    Descripcion VARCHAR(250),
-    Activo BIT NOT NULL DEFAULT 1,
-    FechaCreacion DATETIME NOT NULL DEFAULT GETDATE()
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(250),
+    activo BIT NOT NULL DEFAULT 1,
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE()
 );
 
 ALTER TABLE [Seguridad].[Roles]
 ADD CONSTRAINT UQ_Roles_Nombre
-UNIQUE(Nombre);
+UNIQUE(nombre);
 
 
 -- ============================================================
@@ -63,12 +63,12 @@ UNIQUE(Nombre);
 -- ============================================================
 CREATE TABLE [Seguridad].[UsuarioRol]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    IdUsuario INT NOT NULL,
-    IdRol INT NOT NULL,
-    FechaAsignacion DATETIME NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT FK_UsuarioRol_Usuario FOREIGN KEY(IdUsuario) REFERENCES [Seguridad].[Usuarios](Id),
-    CONSTRAINT FK_UsuarioRol_Rol FOREIGN KEY(IdRol) REFERENCES [Seguridad].[Roles](Id)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idUsuario INT NOT NULL,
+    idRol INT NOT NULL,
+    fechaAsignacion DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_UsuarioRol_Usuario FOREIGN KEY(idUsuario) REFERENCES [Seguridad].[Usuarios](id),
+    CONSTRAINT FK_UsuarioRol_Rol FOREIGN KEY(idRol) REFERENCES [Seguridad].[Roles](id)
 );
 
 
@@ -77,20 +77,20 @@ CREATE TABLE [Seguridad].[UsuarioRol]
 -- ============================================================
 CREATE TABLE [Seguridad].[Modulos]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    Nombre VARCHAR(100) NOT NULL,
-    Codigo VARCHAR(50) NOT NULL,
-    Descripcion VARCHAR(250) NULL,
-    Ruta VARCHAR(250) NULL,
-    Icono VARCHAR(100) NULL,
-    OrdenMenu INT NOT NULL DEFAULT 0,
-    VisibleMenu BIT NOT NULL DEFAULT 1,
-    Activo BIT NOT NULL DEFAULT 1
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(250) NULL,
+    ruta VARCHAR(250) NULL,
+    icono VARCHAR(100) NULL,
+    ordenMenu INT NOT NULL DEFAULT 0,
+    visibleMenu BIT NOT NULL DEFAULT 1,
+    activo BIT NOT NULL DEFAULT 1
 );
 
 ALTER TABLE [Seguridad].[Modulos]
 ADD CONSTRAINT UQ_Modulos_Codigo
-UNIQUE(Codigo);
+UNIQUE(codigo);
 
 
 
@@ -100,22 +100,22 @@ UNIQUE(Codigo);
 -- ============================================================
 CREATE TABLE [Seguridad].[Opciones]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    IdModulo INT NOT NULL,
-    Nombre VARCHAR(150) NOT NULL,
-    Codigo VARCHAR(100) NOT NULL,
-    Descripcion VARCHAR(250) NULL,
-    Ruta VARCHAR(250) NULL,
-    Icono VARCHAR(100) NULL,
-    OrdenMenu INT NOT NULL DEFAULT 0,
-    VisibleMenu BIT NOT NULL DEFAULT 1,
-    Activo BIT NOT NULL DEFAULT 1,
-    CONSTRAINT FK_Opciones_Modulos FOREIGN KEY(IdModulo) REFERENCES [Seguridad].[Modulos](Id)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idModulo INT NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    codigo VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(250) NULL,
+    ruta VARCHAR(250) NULL,
+    icono VARCHAR(100) NULL,
+    ordenMenu INT NOT NULL DEFAULT 0,
+    visibleMenu BIT NOT NULL DEFAULT 1,
+    activo BIT NOT NULL DEFAULT 1,
+    CONSTRAINT FK_Opciones_Modulos FOREIGN KEY(idModulo) REFERENCES [Seguridad].[Modulos](id)
 );
 
 ALTER TABLE [Seguridad].[Opciones]
 ADD CONSTRAINT UQ_Opciones_Codigo
-UNIQUE(Codigo);
+UNIQUE(codigo);
 
 
 -- ============================================================
@@ -123,18 +123,18 @@ UNIQUE(Codigo);
 -- ============================================================
 CREATE TABLE [Seguridad].[Permisos]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    IdOpcion INT NOT NULL,
-    Codigo VARCHAR(150) NOT NULL,
-    Nombre VARCHAR(150) NOT NULL,
-    Descripcion VARCHAR(250) NULL,
-    Activo BIT NOT NULL DEFAULT 1,
-    CONSTRAINT FK_Permisos_Opciones FOREIGN KEY(IdOpcion)  REFERENCES [Seguridad].[Opciones](Id)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idOpcion INT NOT NULL,
+    codigo VARCHAR(150) NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion VARCHAR(250) NULL,
+    activo BIT NOT NULL DEFAULT 1,
+    CONSTRAINT FK_Permisos_Opciones FOREIGN KEY(idOpcion)  REFERENCES [Seguridad].[Opciones](id)
 );
 
 ALTER TABLE [Seguridad].[Permisos]
 ADD CONSTRAINT UQ_Permisos_Codigo
-UNIQUE(Codigo);
+UNIQUE(codigo);
 
 
 -- ============================================================
@@ -142,12 +142,12 @@ UNIQUE(Codigo);
 -- ============================================================
 CREATE TABLE [Seguridad].[RolPermiso]
 (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    IdRol INT NOT NULL,
-    IdPermiso INT NOT NULL,
-    FechaAsignacion DATETIME NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT FK_RolPermiso_Rol FOREIGN KEY(IdRol) REFERENCES [Seguridad].[Roles](Id),
-    CONSTRAINT FK_RolPermiso_Permiso FOREIGN KEY(IdPermiso) REFERENCES [Seguridad].[Permisos](Id)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idRol INT NOT NULL,
+    idPermiso INT NOT NULL,
+    fechaAsignacion DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_RolPermiso_Rol FOREIGN KEY(idRol) REFERENCES [Seguridad].[Roles](id),
+    CONSTRAINT FK_RolPermiso_Permiso FOREIGN KEY(idPermiso) REFERENCES [Seguridad].[Permisos](id)
 );
 
 
@@ -156,15 +156,15 @@ CREATE TABLE [Seguridad].[RolPermiso]
 -- ============================================================
 CREATE TABLE [Seguridad].[Auditoria]
 (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    IdUsuario INT NOT NULL,
-    Tabla VARCHAR(100) NOT NULL,
-    Accion VARCHAR(50) NOT NULL,
-    RegistroId VARCHAR(100) NOT NULL,
-    DatosAnteriores NVARCHAR(MAX) NULL,
-    DatosNuevos NVARCHAR(MAX) NULL,
-    Fecha DATETIME NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT FK_Auditoria_Usuario FOREIGN KEY(IdUsuario) REFERENCES [Seguridad].[Usuarios](Id)
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    idUsuario INT NOT NULL,
+    tabla VARCHAR(100) NOT NULL,
+    accion VARCHAR(50) NOT NULL,
+    registroId VARCHAR(100) NOT NULL,
+    datosAnteriores NVARCHAR(MAX) NULL,
+    datosNuevos NVARCHAR(MAX) NULL,
+    fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_Auditoria_Usuario FOREIGN KEY(idUsuario) REFERENCES [Seguridad].[Usuarios](id)
 );
 
 
@@ -173,104 +173,104 @@ CREATE TABLE [Seguridad].[Auditoria]
 -- ============================================================
 CREATE TABLE [Seguridad].[RefreshTokens]
 (
-    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    IdUsuario INT NOT NULL,
-    Token NVARCHAR(500) NOT NULL,
-    FechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
-    FechaExpiracion DATETIME NOT NULL,
-    Revocado BIT NOT NULL DEFAULT 0,
-    FechaRevocacion DATETIME NULL,
-    CONSTRAINT FK_RefreshTokens_Usuario FOREIGN KEY(IdUsuario) REFERENCES [Seguridad].[Usuarios](Id)
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    idUsuario INT NOT NULL,
+    token NVARCHAR(500) NOT NULL,
+    fechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    fechaExpiracion DATETIME NOT NULL,
+    revocado BIT NOT NULL DEFAULT 0,
+    fechaRevocacion DATETIME NULL,
+    CONSTRAINT FK_RefreshTokens_Usuario FOREIGN KEY(idUsuario) REFERENCES [Seguridad].[Usuarios](id)
 );
 GO
 CREATE TABLE [Base].[TipoParametros] (
-   Id INT IDENTITY(1,1) PRIMARY KEY,
-   Descripcion VARCHAR(300),
-   Orden INT,
-   Estado bit
+   id INT IDENTITY(1,1) PRIMARY KEY,
+   descripcion VARCHAR(300),
+   orden INT,
+   estado bit
 );
 GO
 CREATE TABLE [Base].[Parametros](
-	Id INT IDENTITY(1,1) PRIMARY KEY,
-	IdTipoParametro INT NOT NULL,
-	Descripcion VARCHAR(300),
-	Abreviacion VARCHAR(50),
-	Codigo VARCHAR(10),
-	Orden INT,
-	Estado bit,
-	CONSTRAINT FK_TipoParametro FOREIGN KEY (IdTipoParametro) REFERENCES [Base].[TipoParametros](Id)
+	id INT IDENTITY(1,1) PRIMARY KEY,
+	idTipoParametro INT NOT NULL,
+	descripcion VARCHAR(300),
+	abreviacion VARCHAR(50),
+	codigo VARCHAR(10),
+	orden INT,
+	estado bit,
+	CONSTRAINT FK_TipoParametro FOREIGN KEY (idTipoParametro) REFERENCES [Base].[TipoParametros](id)
 )
 GO
 CREATE TABLE [Base].[Temporadas](
-    Id INT IDENTITY PRIMARY KEY,
-    Nombre VARCHAR(20),
-    FechaInicio DATE,
-    FechaFin DATE
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(20),
+    fechaInicio DATE,
+    fechaFin DATE
 )
 GO
 -- 2. Tabla de Ligas
 CREATE TABLE [Base].[Ligas] (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    NombreLiga VARCHAR(100) NOT NULL ,
-    Pais VARCHAR(50) NOT NULL,
-	Tipo VARCHAR(50)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombreLiga VARCHAR(100) NOT NULL ,
+    pais VARCHAR(50) NOT NULL,
+	tipo VARCHAR(50)
 );
 
 -- 3. Tabla de Equipos
 CREATE TABLE [Base].[Equipos] (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    NombreEquipo VARCHAR(100) NOT NULL,
-	Abreviatura [varchar](20) NULL,
-	Pais VARCHAR(50) NOT NULL,
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nombreEquipo VARCHAR(100) NOT NULL,
+	abreviatura [varchar](20) NULL,
+	pais VARCHAR(50) NOT NULL,
 );
 
 CREATE TABLE [Base].LigaEquipos(
-    Id INT IDENTITY PRIMARY KEY,
-    IdLiga INT,
-    IdEquipo INT,
-    IdTemporada INT,
-	CONSTRAINT FK_LE_Ligas FOREIGN KEY (IdLiga) REFERENCES [Base].[Ligas](Id),
-	CONSTRAINT FK_LE_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),
-	CONSTRAINT FK_LE_Temporadas FOREIGN KEY (IdTemporada	) REFERENCES [Base].[Temporadas](Id),
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idLiga INT,
+    idEquipo INT,
+    idTemporada INT,
+	CONSTRAINT FK_LE_Ligas FOREIGN KEY (idLiga) REFERENCES [Base].[Ligas](id),
+	CONSTRAINT FK_LE_Equipos FOREIGN KEY (idEquipo) REFERENCES [Base].[Equipos](id),
+	CONSTRAINT FK_LE_Temporadas FOREIGN KEY (idTemporada) REFERENCES [Base].[Temporadas](id),
 )
 -- 4. Tabla de Partidos
 CREATE TABLE [Metrica].[Partidos] (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-	Jornada INT NOT NULL,
-    IdLiga INT NOT NULL,
-    IdLocal INT NOT NULL,
-    IdVisitante INT NOT NULL,
-    Fecha DATETIME NOT NULL,
-    IdTemporada INT NOT NULL,
-	IdpEstado INT NOT NULL,
-    CONSTRAINT FK_Partidos_Ligas FOREIGN KEY (IdLiga) REFERENCES [Base].[Ligas](Id),
-    CONSTRAINT FK_Partidos_Local FOREIGN KEY (IdLocal) REFERENCES [Base].[Equipos](Id),
-    CONSTRAINT FK_Partidos_Visitante FOREIGN KEY (IdVisitante) REFERENCES [Base].[Equipos](Id),
-	CONSTRAINT FK_Temporada FOREIGN KEY (IdTemporada) REFERENCES [Base].[Temporadas](Id),
-	CONSTRAINT FK_EstadoPartido FOREIGN KEY (IdpEstado) REFERENCES [Base].[Parametros](Id)
+    id INT IDENTITY(1,1) PRIMARY KEY,
+	jornada INT NOT NULL,
+    idLiga INT NOT NULL,
+    idLocal INT NOT NULL,
+    idVisitante INT NOT NULL,
+    fecha DATETIME NOT NULL,
+    idTemporada INT NOT NULL,
+	idpEstado INT NOT NULL,
+    CONSTRAINT FK_Partidos_Ligas FOREIGN KEY (idLiga) REFERENCES [Base].[Ligas](id),
+    CONSTRAINT FK_Partidos_Local FOREIGN KEY (idLocal) REFERENCES [Base].[Equipos](id),
+    CONSTRAINT FK_Partidos_Visitante FOREIGN KEY (idVisitante) REFERENCES [Base].[Equipos](id),
+	CONSTRAINT FK_Temporada FOREIGN KEY (idTemporada) REFERENCES [Base].[Temporadas](id),
+	CONSTRAINT FK_EstadoPartido FOREIGN KEY (idpEstado) REFERENCES [Base].[Parametros](id)
 );
 
 -- 5. Tabla de Estadísticas de Partido (Totales por equipo)
-CREATE TABLE [Metrica].[EstadisticasPartido] (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    IdPartido INT NOT NULL,
-    IdEquipo INT NOT NULL,
-    IdpCondicion INT NOT NULL, -- 'Local', 'Visitante'
-    Posesion DECIMAL(5,2), -- Permite guardar porcentajes con decimales ej: 55.40
-	goles_PrimerTiempo INT DEFAULT 0,
-	goles_SegundoTiempo INT DEFAULT 0,
-	TotalGoles INT DEFAULT 0,
-    TirosArco INT DEFAULT 0,
-    Corners INT DEFAULT 0,
+CREATE TABLE [Metrica].[EstadisticasPartidos] (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    idPartido INT NOT NULL,
+    idEquipo INT NOT NULL,
+    idpCondicion INT NOT NULL, -- 'Local', 'Visitante'
+    posesion DECIMAL(5,2), -- Permite guardar porcentajes con decimales ej: 55.40
+	golesPrimerTiempo INT DEFAULT 0,
+	golesSegundoTiempo INT DEFAULT 0,
+	totalGoles INT DEFAULT 0,
+    tirosArco INT DEFAULT 0,
+    corners INT DEFAULT 0,
 	offsides INT DEFAULT 0,
 	faltas INT,
-    tarjetas_amarillas INT,
-    tarjetas_rojas INT,
-    IdpResultado INT NOT NULL, -- 'Ganador','Perdido', 'Empate'	
-    CONSTRAINT FK_Estadisticas_Partidos FOREIGN KEY (IdPartido) REFERENCES [Metrica].[Partidos](Id) ON DELETE CASCADE,
-    CONSTRAINT FK_Estadisticas_Equipos FOREIGN KEY (IdEquipo) REFERENCES [Base].[Equipos](Id),
-	CONSTRAINT FK_Condicion_Equipo FOREIGN KEY (IdpCondicion) REFERENCES [Base].[Parametros](Id),
-	CONSTRAINT FK_Resultado_Equipo FOREIGN KEY (IdpResultado) REFERENCES [Base].[Parametros](Id),
+    tarjetasAmarillas INT,
+    tarjetasRojas INT,
+    idpResultado INT NOT NULL, -- 'Ganador','Perdido', 'Empate'	
+    CONSTRAINT FK_Estadisticas_Partidos FOREIGN KEY (idPartido) REFERENCES [Metrica].[Partidos](id) ON DELETE CASCADE,
+    CONSTRAINT FK_Estadisticas_Equipos FOREIGN KEY (idEquipo) REFERENCES [Base].[Equipos](id),
+	CONSTRAINT FK_Condicion_Equipo FOREIGN KEY (idpCondicion) REFERENCES [Base].[Parametros](id),
+	CONSTRAINT FK_Resultado_Equipo FOREIGN KEY (idpResultado) REFERENCES [Base].[Parametros](id),
 );
 
 
@@ -375,24 +375,24 @@ INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Edit','','EQUIPOS_EDITAR
 INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Delete','','EQUIPOS_ELIMINAR',1)
 INSERT INTO [Seguridad].[Permisos] VALUES (10,'/Equipos/Details','','EQUIPOS_DETALLE',1)
 
-INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Index','','LIGAS_VER',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Create','','LIGAS_CREAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Edit','','LIGAS_EDITAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Delete','','LIGAS_ELIMINAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Liga/Details','','LIGAS_DETALLE',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Ligas/Index','','LIGAS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Ligas/Create','','LIGAS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Ligas/Edit','','LIGAS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Ligas/Delete','','LIGAS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (11,'/Ligas/Details','','LIGAS_DETALLE',1)
 
-INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Index','','LIGAEQUIPO_VER',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Create','','LIGAEQUIPO_CREAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Edit','','LIGAEQUIPO_EDITAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Delete','','LIGAEQUIPO_ELIMINAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipo/Details','','LIGAEQUIPO_DETALLE',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipos/Index','','LIGAEQUIPOS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipos/Create','','LIGAEQUIPOS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipos/Edit','','LIGAEQUIPOS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipos/Delete','','LIGAEQUIPOS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (12,'/LigaEquipos/Details','','LIGAEQUIPOS_DETALLE',1)
 
 
-INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Index','','TEMPORADAS_VER',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Create','','TEMPORADAS_CREAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Edit','','TEMPORADAS_EDITAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Delete','','TEMPORADAS_ELIMINAR',1)
-INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporada/Details','','TEMPORADAS_DETALLE',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporadas/Index','','TEMPORADAS_VER',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporadas/Create','','TEMPORADAS_CREAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporadas/Edit','','TEMPORADAS_EDITAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporadas/Delete','','TEMPORADAS_ELIMINAR',1)
+INSERT INTO [Seguridad].[Permisos] VALUES (13,'/Temporadas/Details','','TEMPORADAS_DETALLE',1)
 
 INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Index','','PARTIDOS_VER',1)
 INSERT INTO [Seguridad].[Permisos] VALUES (14,'/Partidos/Create','','PARTIDOS_CREAR',1)

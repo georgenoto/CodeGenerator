@@ -83,7 +83,9 @@ public class EntityGenerator
                         if (!string.IsNullOrEmpty(col.FkReferencedDisplayColumn) &&
                             !col.FkReferencedDisplayColumn.Equals(col.FkReferencedColumn, StringComparison.OrdinalIgnoreCase))
                         {
-                            ep.FkDisplayPropertyName = $"{navName}{col.FkReferencedDisplayColumn}";
+                            var displayCol = col.FkReferencedDisplayColumn;
+                            var displayColPascal = char.ToUpper(displayCol[0]) + displayCol.Substring(1);
+                            ep.FkDisplayPropertyName = $"{navName}{displayColPascal}";
                         }
 
                         var refSchemaNs = SchemaHelper.ToNamespace(col.FkReferencedSchema ?? "dbo");

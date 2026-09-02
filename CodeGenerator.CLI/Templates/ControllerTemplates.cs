@@ -282,7 +282,7 @@ public static class ControllerTemplates
             sb.AppendLine($"        var items = await _{fkTable}Service.GetAllAsync();");
             foreach (var fk in fkProps.Where(f => f.FkReferencedTable == fkTable))
             {
-                var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
+                var displayCol = fk.FkReferencedDisplayColumn ?? fk.FkReferencedColumn ?? "id";
                 sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof({fkTable}Dto.{fk.FkReferencedColumn}), \"{displayCol}\");");
             }
             sb.AppendLine("    }");
@@ -298,8 +298,8 @@ public static class ControllerTemplates
             sb.AppendLine($"        var items = await _ParametrosService.GetAllAsync();");
             foreach (var fk in fkParametrosWithoutId)
             {
-                var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
-                sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof(ParametrosDto.Id), \"{displayCol}\");");
+                var displayCol = fk.FkReferencedDisplayColumn ?? fk.FkReferencedColumn ?? "id";
+                sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof(ParametrosDto.{fk.FkReferencedColumn}), \"{displayCol}\");");
             }
             sb.AppendLine("    }");
             sb.AppendLine();
@@ -310,11 +310,11 @@ public static class ControllerTemplates
         foreach (var fk in fkParametrosWithId)
         {
             var idTipo = fk.FkParametrosIdTipoParametro!.Value;
-            var displayCol = fk.FkReferencedDisplayColumn ?? "Id";
+            var displayCol = fk.FkReferencedDisplayColumn ?? fk.FkReferencedColumn ?? "id";
             sb.AppendLine($"    private async Task Populate{fk.Name}DropdownAsync()");
             sb.AppendLine("    {");
             sb.AppendLine($"        var items = await _ParametrosService.GetAllAsync({idTipo});");
-            sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof(ParametrosDto.Id), \"{displayCol}\");");
+            sb.AppendLine($"        ViewData[\"{fk.Name}\"] = new SelectList(items, nameof(ParametrosDto.{fk.FkReferencedColumn}), \"{displayCol}\");");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

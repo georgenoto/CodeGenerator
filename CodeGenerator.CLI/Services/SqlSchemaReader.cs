@@ -192,7 +192,7 @@ public class SqlSchemaReader
         foreach (var c in candidates)
         {
             var match = table.Columns.FirstOrDefault(col => col.ColumnName.Equals(c, StringComparison.OrdinalIgnoreCase));
-            if (match != null) return c;
+            if (match != null) return match.ColumnName;
         }
 
         var stringCol = table.Columns.FirstOrDefault(col =>
@@ -240,7 +240,7 @@ public class SqlSchemaReader
     private static Dictionary<string, int> ReadTipoParametrosMap(SqlConnection connection)
     {
         var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var query = "SELECT Id, Descripcion FROM [Base].[TipoParametros] ORDER BY Id";
+        var query = "SELECT id, descripcion FROM [Base].[TipoParametros] ORDER BY id";
         using var cmd = new SqlCommand(query, connection);
         using var reader = cmd.ExecuteReader();
         while (reader.Read())

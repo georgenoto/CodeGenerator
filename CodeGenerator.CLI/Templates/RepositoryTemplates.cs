@@ -44,7 +44,7 @@ public class Repository<T> : IRepository<T> where T : class
     public async Task<T?> GetByIdAsync(object id)
     {{
         var keyName = _context.Model.FindEntityType(typeof(T))?.FindPrimaryKey()?.Properties
-            .FirstOrDefault()?.Name ?? ""Id"";
+            .FirstOrDefault()?.Name ?? ""id"";
         return await IncludeNavigations(_dbSet)
             .FirstOrDefaultAsync(e => EF.Property<object>(e, keyName).Equals(id));
     }}

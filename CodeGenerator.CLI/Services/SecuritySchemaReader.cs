@@ -55,11 +55,11 @@ public class SecuritySchemaReader
             connection.Open();
 
             var permisosQuery = $@"
-                SELECT o.Nombre AS OpcionNombre, p.Codigo AS Ruta, p.Descripcion AS CodigoPermiso
+                SELECT o.nombre AS OpcionNombre, p.codigo AS Ruta, p.descripcion AS CodigoPermiso
                 FROM [{result.SchemaName}].[{result.PermisosTable}] p
-                INNER JOIN [{result.SchemaName}].[{result.OpcionesTable}] o ON p.IdOpcion = o.Id
-                WHERE p.Activo = 1 AND o.Activo = 1
-                  AND LTRIM(RTRIM(ISNULL(p.Descripcion, ''))) <> ''";
+                INNER JOIN [{result.SchemaName}].[{result.OpcionesTable}] o ON p.idOpcion = o.id
+                WHERE p.activo = 1 AND o.activo = 1
+                  AND LTRIM(RTRIM(ISNULL(p.descripcion, ''))) <> ''";
 
             using (var cmd = new SqlCommand(permisosQuery, connection))
             using (var reader = cmd.ExecuteReader())

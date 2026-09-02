@@ -1,7 +1,22 @@
 [
-    {
-        "Entity": "MapeoParametro",
-        "ChildProperty": "IdParametro",
-        "ParentProperty": "IdTipoParametro"
-    }
+  {
+    "Entity": "MapeoParametro",
+    "ChildProperty": "IdParametro",
+    "ParentProperty": "IdTipoParametro"
+  },
+  {
+    "Entity": "Partido",
+    "ChildProperty": "IdLiga",
+    "ParentProperty": "IdTemporada"
+  },
+  {
+    "Entity": "Partido",
+    "ChildProperty": "IdLocal",
+    "ParentProperty": "IdLiga"
+  },
+  {
+    "Entity": "Partido",
+    "ChildProperty": "IdVisitante",
+    "ParentProperty": "IdLiga"
+  }
 ]

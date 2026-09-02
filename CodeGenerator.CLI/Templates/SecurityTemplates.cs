@@ -248,38 +248,38 @@ public class AuthService : IAuthService
             return new LoginResultDto {{ Success = false, Error = ""Ingrese usuario y contraseña."" }};
 
         var usuario = (await _usuarios.FindAsync(u =>
-            (u.Usuario == dto.Usuario || u.Correo == dto.Usuario) && u.Activo)).FirstOrDefault();
+            (u.usuario == dto.Usuario || u.correo == dto.Usuario) && u.activo)).FirstOrDefault();
 
         if (usuario == null)
             return new LoginResultDto {{ Success = false, Error = ""Usuario o contraseña incorrectos."" }};
 
-        if (!PasswordHasher.VerifyPassword(dto.Password, usuario.PasswordHash, out var requiresUpgrade))
+        if (!PasswordHasher.VerifyPassword(dto.Password, usuario.passwordHash, out var requiresUpgrade))
             return new LoginResultDto {{ Success = false, Error = ""Usuario o contraseña incorrectos."" }};
 
         if (requiresUpgrade)
         {{
-            usuario.PasswordHash = PasswordHasher.HashPassword(dto.Password);
+            usuario.passwordHash = PasswordHasher.HashPassword(dto.Password);
             _usuarios.Update(usuario);
             await _usuarios.SaveChangesAsync();
         }}
 
-        usuario.UltimoAcceso = DateTime.UtcNow;
+        usuario.ultimoAcceso = DateTime.UtcNow;
         _usuarios.Update(usuario);
         await _usuarios.SaveChangesAsync();
 
-        var roles = await GetRolesAsync(usuario.Id);
-        var permisos = await GetPermisosAsync(usuario.Id);
+        var roles = await GetRolesAsync(usuario.id);
+        var permisos = await GetPermisosAsync(usuario.id);
 
         return new LoginResultDto
         {{
             Success = true,
-            UsuarioId = usuario.Id,
-            Usuario = usuario.Usuario,
-            NombreCompleto = usuario.NombreCompleto,
+            UsuarioId = usuario.id,
+            Usuario = usuario.usuario,
+            NombreCompleto = usuario.nombreCompleto,
             Roles = roles,
             Permisos = permisos,
-            AccessToken = _jwt.CreateAccessToken(usuario.Id, usuario.Usuario, usuario.NombreCompleto, roles, permisos),
-            RefreshToken = await CreateRefreshTokenAsync(usuario.Id)
+            AccessToken = _jwt.CreateAccessToken(usuario.id, usuario.usuario, usuario.nombreCompleto, roles, permisos),
+            RefreshToken = await CreateRefreshTokenAsync(usuario.id)
         }};
     }}
 
@@ -289,92 +289,92 @@ public class AuthService : IAuthService
             return new LoginResultDto {{ Success = false, Error = ""Token de refresco requerido."" }};
 
         var stored = (await _refreshTokens.FindAsync(t =>
-            t.Token == refreshToken && !t.Revocado && t.FechaExpiracion > DateTime.UtcNow)).FirstOrDefault();
+            t.token == refreshToken && !t.revocado && t.fechaExpiracion > DateTime.UtcNow)).FirstOrDefault();
 
         if (stored == null)
             return new LoginResultDto {{ Success = false, Error = ""Token de refresco inválido o expirado."" }};
 
-        var usuario = await _usuarios.GetByIdAsync(stored.IdUsuario);
-        if (usuario == null || !usuario.Activo)
+        var usuario = await _usuarios.GetByIdAsync(stored.idUsuario);
+        if (usuario == null || !usuario.activo)
             return new LoginResultDto {{ Success = false, Error = ""Usuario no válido."" }};
 
-        stored.Revocado = true;
-        stored.FechaRevocacion = DateTime.UtcNow;
+        stored.revocado = true;
+        stored.fechaRevocacion = DateTime.UtcNow;
         _refreshTokens.Update(stored);
         await _refreshTokens.SaveChangesAsync();
 
-        var roles = await GetRolesAsync(usuario.Id);
-        var permisos = await GetPermisosAsync(usuario.Id);
+        var roles = await GetRolesAsync(usuario.id);
+        var permisos = await GetPermisosAsync(usuario.id);
 
         return new LoginResultDto
         {{
             Success = true,
-            UsuarioId = usuario.Id,
-            Usuario = usuario.Usuario,
-            NombreCompleto = usuario.NombreCompleto,
+            UsuarioId = usuario.id,
+            Usuario = usuario.usuario,
+            NombreCompleto = usuario.nombreCompleto,
             Roles = roles,
             Permisos = permisos,
-            AccessToken = _jwt.CreateAccessToken(usuario.Id, usuario.Usuario, usuario.NombreCompleto, roles, permisos),
-            RefreshToken = await CreateRefreshTokenAsync(usuario.Id)
+            AccessToken = _jwt.CreateAccessToken(usuario.id, usuario.usuario, usuario.nombreCompleto, roles, permisos),
+            RefreshToken = await CreateRefreshTokenAsync(usuario.id)
         }};
     }}
 
     public async Task<List<string>> GetRolesAsync(int userId)
     {{
-        var rolIds = (await _usuarioRoles.FindAsync(ur => ur.IdUsuario == userId))
-            .Select(ur => ur.IdRol).ToList();
+        var rolIds = (await _usuarioRoles.FindAsync(ur => ur.idUsuario == userId))
+            .Select(ur => ur.idRol).ToList();
         if (rolIds.Count == 0) return new List<string>();
 
-        var roles = await _roles.FindAsync(r => rolIds.Contains(r.Id));
-        return roles.Select(r => r.Nombre).ToList();
+        var roles = await _roles.FindAsync(r => rolIds.Contains(r.id));
+        return roles.Select(r => r.nombre).ToList();
     }}
 
     public async Task<List<string>> GetPermisosAsync(int userId)
     {{
-        var rolIds = (await _usuarioRoles.FindAsync(ur => ur.IdUsuario == userId))
-            .Select(ur => ur.IdRol).ToList();
+        var rolIds = (await _usuarioRoles.FindAsync(ur => ur.idUsuario == userId))
+            .Select(ur => ur.idRol).ToList();
         if (rolIds.Count == 0) return new List<string>();
 
-        var permisoIds = (await _rolPermisos.FindAsync(rp => rolIds.Contains(rp.IdRol)))
-            .Select(rp => rp.IdPermiso).Distinct().ToList();
+        var permisoIds = (await _rolPermisos.FindAsync(rp => rolIds.Contains(rp.idRol)))
+            .Select(rp => rp.idPermiso).Distinct().ToList();
         if (permisoIds.Count == 0) return new List<string>();
 
-        var permisos = await _permisos.FindAsync(p => permisoIds.Contains(p.Id) && p.Activo);
-        return permisos.Select(p => p.Descripcion).Where(d => !string.IsNullOrEmpty(d)).ToList()!;
+        var permisos = await _permisos.FindAsync(p => permisoIds.Contains(p.id) && p.activo);
+        return permisos.Select(p => p.descripcion).Where(d => !string.IsNullOrEmpty(d)).ToList()!;
     }}
 
     public async Task<List<MenuDto>> GetMenuAsync(int userId)
     {{
-        var rolIds = (await _usuarioRoles.FindAsync(ur => ur.IdUsuario == userId))
-            .Select(ur => ur.IdRol).ToList();
+        var rolIds = (await _usuarioRoles.FindAsync(ur => ur.idUsuario == userId))
+            .Select(ur => ur.idRol).ToList();
         if (rolIds.Count == 0) return new List<MenuDto>();
 
-        var permisoIds = (await _rolPermisos.FindAsync(rp => rolIds.Contains(rp.IdRol)))
-            .Select(rp => rp.IdPermiso).Distinct().ToList();
+        var permisoIds = (await _rolPermisos.FindAsync(rp => rolIds.Contains(rp.idRol)))
+            .Select(rp => rp.idPermiso).Distinct().ToList();
         if (permisoIds.Count == 0) return new List<MenuDto>();
 
-        // Opciones accesibles por el usuario (FK directa Permisos.IdOpcion -> Opciones.Id)
-        var opcionIds = (await _permisos.FindAsync(p => permisoIds.Contains(p.Id) && p.Activo))
-            .Select(p => p.IdOpcion).Distinct().ToList();
+        // Opciones accesibles por el usuario (FK directa Permisos.idOpcion -> Opciones.id)
+        var opcionIds = (await _permisos.FindAsync(p => permisoIds.Contains(p.id) && p.activo))
+            .Select(p => p.idOpcion).Distinct().ToList();
         if (opcionIds.Count == 0) return new List<MenuDto>();
 
-        var modulos = (await _modulos.FindAsync(x => x.Activo && x.VisibleMenu))
-            .OrderBy(x => x.OrdenMenu).ToList();
-        var opciones = (await _opciones.FindAsync(x => opcionIds.Contains(x.Id) && x.Activo && x.VisibleMenu))
-            .OrderBy(x => x.OrdenMenu).ToList();
+        var modulos = (await _modulos.FindAsync(x => x.activo && x.visibleMenu))
+            .OrderBy(x => x.ordenMenu).ToList();
+        var opciones = (await _opciones.FindAsync(x => opcionIds.Contains(x.id) && x.activo && x.visibleMenu))
+            .OrderBy(x => x.ordenMenu).ToList();
 
         var menu = new List<MenuDto>();
         foreach (var modulo in modulos)
         {{
             var items = opciones
-                .Where(x => x.IdModulo == modulo.Id)
+                .Where(x => x.idModulo == modulo.id)
                 .Select(x => new OpcionMenuDto
                 {{
-                    Nombre = x.Nombre,
-                    Codigo = x.Codigo ?? """",
-                    Ruta = x.Ruta ?? """",
-                    Icono = x.Icono ?? """",
-                    Controller = GetControllerFromRuta(x.Ruta),
+                    Nombre = x.nombre,
+                    Codigo = x.codigo ?? """",
+                    Ruta = x.ruta ?? """",
+                    Icono = x.icono ?? """",
+                    Controller = GetControllerFromRuta(x.ruta),
                     Action = ""Index""
                 }})
                 .ToList();
@@ -383,10 +383,10 @@ public class AuthService : IAuthService
 
             menu.Add(new MenuDto
             {{
-                Modulo = modulo.Nombre,
-                Codigo = modulo.Codigo ?? """",
-                Icono = modulo.Icono ?? """",
-                Ruta = modulo.Ruta ?? """",
+                Modulo = modulo.nombre,
+                Codigo = modulo.codigo ?? """",
+                Icono = modulo.icono ?? """",
+                Ruta = modulo.ruta ?? """",
                 Opciones = items
             }});
         }}
@@ -398,11 +398,11 @@ public class AuthService : IAuthService
         var token = _jwt.GenerateRefreshToken();
         var entity = new {rt}
         {{
-            IdUsuario = userId,
-            Token = token,
-            FechaCreacion = DateTime.UtcNow,
-            FechaExpiracion = DateTime.UtcNow.AddDays(7),
-            Revocado = false
+            idUsuario = userId,
+            token = token,
+            fechaCreacion = DateTime.UtcNow,
+            fechaExpiracion = DateTime.UtcNow.AddDays(7),
+            revocado = false
         }};
         await _refreshTokens.AddAsync(entity);
         await _refreshTokens.SaveChangesAsync();
